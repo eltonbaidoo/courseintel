@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "CourseIntel Scraper",
+  "version": "0.1.0",
+  "description": "Captures assignment and deadline data from academic platforms for CourseIntel.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "https://www.gradescope.com/*",
+    "https://canvas.*.edu/*",
+    "https://*.instructure.com/*",
+    "https://*.brightspace.com/*",
+    "https://edfinity.com/*"
+  ],
+  "background": {
+    "service_worker": "dist/background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.gradescope.com/*",
+        "https://*.instructure.com/*",
+        "https://*.brightspace.com/*",
+        "https://edfinity.com/*"
+      ],
+      "js": ["dist/content/scraper.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "CourseIntel Capture"
+  },
+  "icons": {
+    "16": "public/icons/icon16.png",
+    "48": "public/icons/icon48.png",
+    "128": "public/icons/icon128.png"
+  }
+}

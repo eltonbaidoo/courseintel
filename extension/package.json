@@ -1,0 +1,13 @@
+{
+  "name": "courseintel-extension",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc && node scripts/copy-static.js",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/chrome": "^0.0.299"
+  }
+}
