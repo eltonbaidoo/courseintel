@@ -14,15 +14,22 @@ export function formatDate(dateStr: string | null | undefined): string {
   });
 }
 
+/** Urgency chips; palette only (espresso / burnt-peach / almond-cream). */
 export function urgencyColor(urgency: string): string {
-  if (urgency === "high") return "text-red-600 bg-red-50";
-  if (urgency === "medium") return "text-yellow-700 bg-yellow-50";
-  return "text-green-700 bg-green-50";
+  if (urgency === "high")
+    return "text-espresso-900 bg-espresso-100";
+  if (urgency === "medium")
+    return "text-espresso-800 bg-almond-cream-100";
+  return "text-almond-cream-800 bg-almond-cream-50";
 }
 
+/** Risk pills; palette only. */
 export function riskColor(risk: string): string {
-  if (risk === "critical") return "bg-red-600 text-white";
-  if (risk === "high") return "bg-orange-500 text-white";
-  if (risk === "medium") return "bg-yellow-500 text-black";
-  return "bg-green-500 text-white";
+  if (risk === "critical")
+    return "bg-espresso-900 text-almond-cream-50";
+  if (risk === "high")
+    return "bg-burnt-peach-700 text-almond-cream-50";
+  if (risk === "medium")
+    return "bg-almond-cream-400 text-shadow-grey-900";
+  return "bg-almond-cream-600 text-almond-cream-50";
 }

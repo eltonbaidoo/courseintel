@@ -8,11 +8,11 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from config.settings import settings
-from api.routes import courses, grades, extension, auth, health
+from api.routes import courses, grades, extension, auth, health, study
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    format="%(asctime)s %(levelname)s %(name)s | %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -38,8 +38,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "script-src 'none'; "
             "object-src 'none';"
         )
-        # Never reveal the server implementation
-        response.headers.pop("Server", None)
+        try:
+            del response.headers["server"]
+        except KeyError:
+            pass
         return response
 
 
@@ -48,9 +50,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="CourseIntel API",
-    version="0.1.0",
-    # Disable automatic /docs and /redoc in production to reduce attack surface.
-    # Toggle via env var when needed.
+    version="0.2.0",
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
@@ -63,19 +63,19 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in settings.cors_origins.split(",")],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE"],   # restrict to what we actually use
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
 # ---------------------------------------------------------------------------
-# Global exception handlers — never expose internals to clients
+# Global exception handlers; never expose internals to clients
 # ---------------------------------------------------------------------------
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request: Request, exc: RequestValidationError):
     logger.warning("Validation error on %s: %s", request.url.path, exc.errors())
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": "Invalid request — check your input and try again."},
+        content={"detail": "Invalid request. Check your input and try again."},
     )
 
 
@@ -95,4 +95,5 @@ app.include_router(auth.router)
 app.include_router(courses.router)
 app.include_router(grades.router)
 app.include_router(extension.router)
+app.include_router(study.router)
 app.include_router(health.router)

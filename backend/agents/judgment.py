@@ -4,7 +4,24 @@ The core decision layer. Combines all signals into a weekly action plan.
 Uses Opus with adaptive thinking.
 """
 import json
+from typing import TypedDict
 from agents.base import call_llm as call_claude, OPUS
+
+
+class _WeeklyAction(TypedDict):
+    title: str
+    rationale: str
+    priority: int
+    due_date: str | None
+
+
+class JudgmentResult(TypedDict):
+    risk_level: str
+    risk_explanation: str
+    weekly_actions: list[_WeeklyAction]
+    missing_data_flags: list[str]
+    focus_note: str
+
 
 SYSTEM = """
 You are the Judgment Agent for CourseIntel.
@@ -21,7 +38,7 @@ Inputs you receive:
 Decision rules:
 - High urgency = due within 3 days or grade at risk
 - Recommend connecting missing tools if they affect grade calculation
-- Do not recommend everything — pick the top 5 actions max
+- Do not recommend everything; pick the top 5 actions max
 - Be direct. Students need clarity, not encouragement.
 
 Return JSON with:
@@ -41,7 +58,7 @@ async def run(
     study_context: dict | None = None,
     student_signal: dict | None = None,
     missing_flags: list[str] | None = None,
-) -> dict:
+) -> JudgmentResult:
     payload = {
         "course_profile": course_profile,
         "grade_standing": grade_standing,

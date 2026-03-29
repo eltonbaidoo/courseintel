@@ -22,7 +22,7 @@ async def run(materials: list[dict]) -> dict:
     materials: [{title, content, type}]
     """
     combined = "\n\n---\n\n".join(
-        f"[{m['title']} — {m.get('type', 'notes')}]\n{m['content'][:8000]}"
+        f"[{m['title']}: {m.get('type', 'notes')}]\n{m['content'][:8000]}"
         for m in materials
     )
     prompt = f"Study materials:\n\n{combined[:40000]}"

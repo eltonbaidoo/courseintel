@@ -1,6 +1,6 @@
 """
 Grade Intelligence Agent
-Deterministic grade calculation — no LLM needed.
+Deterministic grade calculation; no LLM needed.
 """
 from dataclasses import dataclass
 

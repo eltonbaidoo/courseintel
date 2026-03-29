@@ -1,0 +1,9 @@
+{
+  "demo_script": "Use these values in the bootstrap form; attach csc212-syllabus-demo.pdf (or any syllabus PDF). The fixture csc212-uri-bootstrap-demo.json is the mocked API response shape you can show if you bypass the live pipeline.",
+  "form_fields": {
+    "university": "University of Rhode Island",
+    "course": "CSC 212",
+    "professor": "Marco Alvarez"
+  },
+  "matches_fixture": "csc212-uri-bootstrap-demo.json"
+}

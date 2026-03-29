@@ -23,7 +23,9 @@ Return only valid JSON.
 async def run(university: str, course: str, professor: str = "") -> dict:
     query = f'"{university}" "{course}" course official site'
     results = await search_web(query, max_results=5)
-    context = "\n".join(f"- {r['title']}: {r['url']}" for r in results)
+    context = "\n".join(
+        f"- {r.get('title', '')}: {r.get('url', '')}" for r in results
+    )
 
     prompt = f"""
 University: {university}

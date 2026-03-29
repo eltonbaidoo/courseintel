@@ -1,5 +1,14 @@
+"""
+Tavily web search. Failures must not crash course bootstrap — agents degrade with empty context.
+"""
+import asyncio
+import logging
+
 from tavily import TavilyClient
+
 from config.settings import settings
+
+logger = logging.getLogger(__name__)
 
 _client: TavilyClient | None = None
 
@@ -11,10 +20,27 @@ def get_search_client() -> TavilyClient:
     return _client
 
 
-async def search_web(query: str, max_results: int = 5) -> list[dict]:
+def _search_sync(query: str, max_results: int, depth: str) -> list[dict]:
     client = get_search_client()
-    response = client.search(query=query, max_results=max_results, search_depth="advanced")
+    response = client.search(
+        query=query,
+        max_results=max_results,
+        search_depth=depth,
+    )
     return response.get("results", [])
+
+
+async def search_web(query: str, max_results: int = 5) -> list[dict]:
+    """
+    Run Tavily search. On any error (bad key, quota, network, plan limits), log and return [].
+
+    Uses "basic" depth — works on free tier. "advanced" often returns errors for free accounts.
+    """
+    try:
+        return await asyncio.to_thread(_search_sync, query, max_results, "basic")
+    except Exception as exc:
+        logger.warning("Tavily search failed: %s", exc)
+        return []
 
 
 async def search_for_syllabus(course: str, university: str, professor: str = "") -> list[dict]:

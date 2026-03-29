@@ -1,0 +1,298 @@
+{
+  "id": "demo-csc212-uri-spring2025",
+  "course_identity": {
+    "canonical_name": "Data Structures",
+    "course_code": "CSC 212",
+    "university": "University of Rhode Island",
+    "credit_hours": 3,
+    "official_links": [
+      "https://web.uri.edu/cs/",
+      "https://www.uri.edu/catalog/"
+    ],
+    "confidence": 0.94,
+    "notes": "Matched CSC 212 (Data Structures) Spring 2025 offering; instructor Marco Alvarez. Syllabus uploaded PDF used as ground truth."
+  },
+  "syllabus_status": {
+    "found": true,
+    "confidence": 1.0,
+    "source": "upload"
+  },
+  "course_profile": {
+    "grading_categories": [
+      {
+        "name": "Homework",
+        "weight": 0.35,
+        "assignment_types": ["coding assignment", "autograded"],
+        "notes": "Individual unless stated; autograded via Gradescope; new assignment roughly every 6–9 days."
+      },
+      {
+        "name": "Midterm 1",
+        "weight": 0.20,
+        "assignment_types": ["exam"],
+        "notes": "Open-book (printed/handwritten notes only); no electronic devices. Covers linked lists through stacks/queues."
+      },
+      {
+        "name": "Midterm 2",
+        "weight": 0.20,
+        "assignment_types": ["exam"],
+        "notes": "Open-book; covers trees, heaps, and hash tables."
+      },
+      {
+        "name": "Final Exam",
+        "weight": 0.25,
+        "assignment_types": ["exam"],
+        "notes": "Cumulative. Open-book. Covers all material with emphasis on graphs and algorithm analysis."
+      },
+      {
+        "name": "Participation / Labs",
+        "weight": 0.0,
+        "assignment_types": ["lab", "attendance"],
+        "notes": "Weekly lab attendance required; up to 5–10% extra credit tied to participation (not included in base 100%)."
+      }
+    ],
+    "grade_scale": {
+      "A": 93, "A-": 90,
+      "B+": 87, "B": 83, "B-": 80,
+      "C+": 77, "C": 73, "C-": 70,
+      "D+": 67, "D": 60,
+      "F": 0
+    },
+    "late_policy": "No late submissions accepted for assignments.",
+    "attendance_policy": "Lab sessions are structured (lecture segments, live coding, exercises); attendance expected per syllabus.",
+    "drop_rules": "Follow URI academic calendar and department policies for drops/withdrawals.",
+    "required_tools": [
+      "Ed Discussion",
+      "Gradescope",
+      "Zoom",
+      "C++ development environment (course-specific toolchain per instructor)"
+    ],
+    "key_deadlines": [
+      { "title": "Homework 1 — Vectors & Dynamic Arrays", "date": "2025-02-07", "type": "assignment", "weight_pct": null },
+      { "title": "Homework 2 — Linked Lists", "date": "2025-02-18", "type": "assignment", "weight_pct": null },
+      { "title": "Homework 3 — Stacks & Queues", "date": "2025-03-01", "type": "assignment", "weight_pct": null },
+      { "title": "Midterm 1", "date": "2025-03-06", "type": "exam", "weight_pct": 20 },
+      { "title": "Homework 4 — Binary Search Trees", "date": "2025-03-20", "type": "assignment", "weight_pct": null },
+      { "title": "Homework 5 — Hash Tables", "date": "2025-04-03", "type": "assignment", "weight_pct": null },
+      { "title": "Midterm 2", "date": "2025-04-10", "type": "exam", "weight_pct": 20 },
+      { "title": "Homework 6 — Graphs & BFS/DFS", "date": "2025-04-24", "type": "assignment", "weight_pct": null },
+      { "title": "Final Exam", "date": "2025-05-08", "type": "exam", "weight_pct": 25 }
+    ],
+    "course_summary": "CSC 212 covers fundamental data structures and algorithms—lists, stacks, queues, trees, graphs, and hash tables—with implementation emphasis in C++ and analysis using asymptotic notation.",
+    "workflow_notes": "Lectures TR 9:30–10:45 AM; multiple Wednesday lab sections. Prerequisites: CSC 211 (C- or better) and MTH 180 or Computer Engineering major status. Office hours: Tyler Hall CS lounge (schedule TBD). Academic integrity policy prohibits uncredited AI use; AI is allowed if cited and you understand all submitted work."
+  },
+  "resources": [
+    {
+      "title": "URI CS Department — official course hub",
+      "url": "https://web.uri.edu/cs/",
+      "type": "other",
+      "relevance_score": 0.92,
+      "reason": "Official CS department page for policies, labs, and advising context."
+    },
+    {
+      "title": "VisuAlgo — interactive data structure visualizations",
+      "url": "https://visualgo.net/",
+      "type": "notes",
+      "relevance_score": 0.95,
+      "reason": "Animated step-through of BSTs, heaps, graphs, and sorting algorithms — directly aligned with CSC 212 topics."
+    },
+    {
+      "title": "GeeksforGeeks — Data Structures & Algorithms",
+      "url": "https://www.geeksforgeeks.org/data-structures/",
+      "type": "notes",
+      "relevance_score": 0.85,
+      "reason": "Quick reference C++ implementations with complexity analysis — good supplement for homework."
+    },
+    {
+      "title": "OpenDSA — Virginia Tech interactive textbook",
+      "url": "https://opendsa-server.cs.vt.edu/",
+      "type": "assignments",
+      "relevance_score": 0.80,
+      "reason": "Undergraduate DS textbook with embedded exercises matching CSC 212 curriculum."
+    },
+    {
+      "title": "cppreference.com — C++ STL containers",
+      "url": "https://en.cppreference.com/w/cpp/container",
+      "type": "notes",
+      "relevance_score": 0.88,
+      "reason": "Authoritative reference for std::vector, std::list, std::map, std::unordered_map — all used in CSC 212."
+    },
+    {
+      "title": "CS50 Data Structures lecture (Harvard OpenCourseWare)",
+      "url": "https://cs50.harvard.edu/x/",
+      "type": "other",
+      "relevance_score": 0.76,
+      "reason": "Free recorded lectures with strong visual explanations of pointers and linked lists."
+    },
+    {
+      "title": "MIT 6.006 Introduction to Algorithms (OpenCourseWare)",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
+      "type": "other",
+      "relevance_score": 0.78,
+      "reason": "Lecture notes and problem sets on BSTs, hashing, graphs — deeper theory supplement for exam prep."
+    },
+    {
+      "title": "r/learnprogramming — C++ data structures",
+      "url": "https://www.reddit.com/r/learnprogramming/",
+      "type": "community",
+      "relevance_score": 0.65,
+      "reason": "Active community for debugging help and conceptual questions."
+    },
+    {
+      "title": "GitHub — marco-a-alvarez / csc212",
+      "url": "https://github.com/URI-CSC/csc-212",
+      "type": "github",
+      "relevance_score": 0.97,
+      "reason": "Official course GitHub org with starter code and lab skeletons."
+    },
+    {
+      "title": "YouTube — Back To Back SWE (trees & graphs)",
+      "url": "https://www.youtube.com/c/BackToBackSWE",
+      "type": "video",
+      "relevance_score": 0.82,
+      "reason": "High-quality whiteboard videos on trees, graphs, BFS/DFS — exam prep friendly."
+    }
+  ],
+  "detected_tools": [
+    {
+      "tool_name": "Ed Discussion",
+      "evidence": "Listed in syllabus as platform for discussion, polls, quizzes, and collaboration.",
+      "purpose": "Course Q&A and lightweight assessments",
+      "confidence": 0.95,
+      "signup_url": "https://edstem.org/",
+      "integration_type": "manual"
+    },
+    {
+      "tool_name": "Gradescope",
+      "evidence": "Syllabus specifies assignment submission and autograding through Gradescope.",
+      "purpose": "Homework submission and grading",
+      "confidence": 0.97,
+      "signup_url": "https://www.gradescope.com/",
+      "integration_type": "extension"
+    },
+    {
+      "tool_name": "Zoom",
+      "evidence": "Syllabus references virtual meetings and support sessions.",
+      "purpose": "Virtual office hours or support",
+      "confidence": 0.85,
+      "signup_url": "https://zoom.us/",
+      "integration_type": "manual"
+    },
+    {
+      "tool_name": "VSCode + C++ extension",
+      "evidence": "C++ development environment required; popular toolchain for CSC courses.",
+      "purpose": "Code editor for homework assignments",
+      "confidence": 0.80,
+      "signup_url": "https://code.visualstudio.com/",
+      "integration_type": "manual"
+    },
+    {
+      "tool_name": "Valgrind",
+      "evidence": "Memory-safe C++ is emphasized; Valgrind is standard tool in URI CS labs.",
+      "purpose": "Memory leak detection for C++ assignments",
+      "confidence": 0.72,
+      "signup_url": null,
+      "integration_type": "manual"
+    }
+  ],
+  "student_signal": {
+    "workload_hours_per_week": 10,
+    "workload": "Moderate to high — steady coding assignments on a 6–9 day cadence plus three exams.",
+    "difficulty": "Typical second-year CS data structures pace; pointer-heavy and proof-style analysis on exams.",
+    "grading_style": "Strict no-late policy on homework; majority of grade from exams (65%).",
+    "common_pitfalls": [
+      "Starting homework within 2 days of the deadline — autograded assignments punish edge cases",
+      "Not building printed cheat sheet early — open-book exams reward prepared students",
+      "Skipping lab sections — participation can add 5–10% extra credit",
+      "Ignoring memory leaks — C++ pointer bugs compound across assignments",
+      "Not reading output spec — Gradescope diffs are exact and whitespace matters"
+    ],
+    "key_warnings": [
+      "No late submissions accepted",
+      "Exams prohibit electronic devices; open notes only if printed/handwritten",
+      "Academic integrity explicitly calls out uncredited AI use"
+    ],
+    "positive_signals": [
+      "Transparent grading scale published on syllabus",
+      "Multiple Wednesday lab section times to choose from",
+      "AI use permitted with citation and understanding requirement",
+      "Clear support pathways (AEC, DAI, religious observance process)",
+      "Starter code provided via GitHub org for most assignments"
+    ],
+    "summary": "Structured, exam-weighted course with firm deadlines. Strong fit if you keep up weekly and budget time for open-book exam prep without relying on devices.",
+    "confidence": 0.85
+  },
+  "obligations": [
+    {
+      "title": "Homework 1 — Vectors & Dynamic Arrays",
+      "due_date": "2025-02-07T23:59:00",
+      "source": "syllabus",
+      "type": "assignment",
+      "urgency": "high",
+      "conflict_note": null
+    },
+    {
+      "title": "Homework 2 — Linked Lists",
+      "due_date": "2025-02-18T23:59:00",
+      "source": "syllabus",
+      "type": "assignment",
+      "urgency": "high",
+      "conflict_note": null
+    },
+    {
+      "title": "Homework 3 — Stacks & Queues",
+      "due_date": "2025-03-01T23:59:00",
+      "source": "syllabus",
+      "type": "assignment",
+      "urgency": "high",
+      "conflict_note": null
+    },
+    {
+      "title": "Midterm 1",
+      "due_date": "2025-03-06T09:30:00",
+      "source": "syllabus",
+      "type": "exam",
+      "urgency": "critical",
+      "conflict_note": "Open-book (printed/handwritten only). Covers arrays through stacks/queues."
+    },
+    {
+      "title": "Homework 4 — Binary Search Trees",
+      "due_date": "2025-03-20T23:59:00",
+      "source": "syllabus",
+      "type": "assignment",
+      "urgency": "medium",
+      "conflict_note": null
+    },
+    {
+      "title": "Homework 5 — Hash Tables",
+      "due_date": "2025-04-03T23:59:00",
+      "source": "syllabus",
+      "type": "assignment",
+      "urgency": "medium",
+      "conflict_note": null
+    },
+    {
+      "title": "Midterm 2",
+      "due_date": "2025-04-10T09:30:00",
+      "source": "syllabus",
+      "type": "exam",
+      "urgency": "critical",
+      "conflict_note": "Open-book. Covers trees, heaps, and hash tables."
+    },
+    {
+      "title": "Homework 6 — Graphs & BFS/DFS",
+      "due_date": "2025-04-24T23:59:00",
+      "source": "syllabus",
+      "type": "assignment",
+      "urgency": "medium",
+      "conflict_note": null
+    },
+    {
+      "title": "Final Exam",
+      "due_date": "2025-05-08T15:00:00",
+      "source": "syllabus",
+      "type": "exam",
+      "urgency": "critical",
+      "conflict_note": "Cumulative, open-book. Confirm exact slot with URI final exam schedule."
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# Security Policy — CourseIntel
+# Security Policy: CourseIntel
 
 ## Reporting a Vulnerability
 
@@ -21,7 +21,7 @@ You will receive an acknowledgement within 48 hours. We aim to ship a patch with
 ### Development
 - Copy `backend/.env.example` → `backend/.env` and fill in real values
 - Copy `frontend/.env.local.example` → `frontend/.env.local`
-- **Never commit `.env` files** — they are in `.gitignore`
+- **Never commit `.env` files**; they are in `.gitignore`
 - Generate `INTERNAL_HEALTH_TOKEN` with: `openssl rand -hex 32`
 
 ### Production
@@ -33,7 +33,7 @@ You will receive an acknowledgement within 48 hours. We aim to ship a patch with
 All secrets can be rotated without downtime:
 | Secret | How to rotate |
 |---|---|
-| `ANTHROPIC_API_KEY` | Generate new key in Anthropic console → update secrets manager → redeploy |
+| `OPENAI_API_KEY` | Rotate in OpenAI dashboard → update secrets manager → redeploy |
 | `GOOGLE_API_KEY` | Regenerate in Google AI Studio → update |
 | `TAVILY_API_KEY` | Regenerate in Tavily dashboard → update |
 | `SUPABASE_JWT_SECRET` | Rotate via Supabase dashboard (invalidates all existing sessions) |
@@ -47,7 +47,7 @@ All secrets can be rotated without downtime:
 - All authentication is handled by **Supabase Auth** (industry-standard OAuth/email flows)
 - The backend validates Supabase-issued **JWTs** on every protected route via `api/deps.py`
 - JWTs are short-lived (1 hour); Supabase handles refresh token rotation automatically
-- Passwords **never touch the CourseIntel backend** — Supabase handles credential storage with bcrypt
+- Passwords **never touch the CourseIntel backend**; Supabase handles credential storage with bcrypt
 - The Chrome extension stores the auth token in `chrome.storage.local` (not `localStorage`)
 
 ---
@@ -56,8 +56,8 @@ All secrets can be rotated without downtime:
 
 | Data | Stored? | Where |
 |---|---|---|
-| Syllabus text | Yes | Supabase (Postgres) — per user row |
-| Grades entered | Yes | Supabase — per user |
+| Syllabus text | Yes | Supabase (Postgres), per user row |
+| Grades entered | Yes | Supabase, per user |
 | Scraped page text | Processed then discarded | Not persisted raw |
 | Student notes/PDFs | Yes | Supabase storage bucket |
 | Passwords | Never | Supabase handles hashing |
@@ -69,13 +69,13 @@ All secrets can be rotated without downtime:
 
 | Control | Implementation |
 |---|---|
-| Security headers | `SecurityHeadersMiddleware` in `main.py` — CSP, HSTS, X-Frame-Options, etc. |
-| Rate limiting | `slowapi` — 30 req/min per IP by default (configurable) |
-| CORS | Strict allowlist — no wildcard `*` |
+| Security headers | `SecurityHeadersMiddleware` in `main.py`: CSP, HSTS, X-Frame-Options, etc. |
+| Rate limiting | `slowapi`: 30 req/min per IP by default (configurable) |
+| CORS | Strict allowlist; no wildcard `*` |
 | Input validation | Pydantic v2 with explicit `max_length` on all fields |
 | File upload validation | MIME type header + magic byte check + size cap |
 | Auth | JWT validated server-side on every protected route |
-| Error handling | Global handler — stack traces never reach clients |
+| Error handling | Global handler; stack traces never reach clients |
 | Health endpoint | `/health/llm` requires `X-Internal-Token` header |
 | Dependency pinning | All versions pinned in `requirements.txt` and `package.json` |
 
@@ -100,6 +100,6 @@ cd extension && npm audit
 
 ## Known Limitations (Non-Issues for MVP)
 
-- The Chrome extension content script reads page DOM — this is expected and disclosed to users
+- The Chrome extension content script reads page DOM; this is expected and disclosed to users
 - `chrome.storage.local` is not encrypted on disk; this matches the security model of all browser extensions
 - The `/health` liveness endpoint is public by design (needed for load balancers)

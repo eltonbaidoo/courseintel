@@ -1,117 +1,74 @@
 """
 LLM gateway for CourseIntel agents.
 
-Call order:  Anthropic Claude  →  Google Gemini (fallback)
+Supported providers (auto-selected from .env):
+  OPENAI_API_KEY  → OpenAI gpt-4o / gpt-4o-mini
+  GEMINI_API_KEY  → Google Gemini (1.5 Pro for gpt-4o tier, 2.0 Flash for mini tier; free tier quotas apply)
+  GROQ_API_KEY    → Groq llama-3.3-70b-versatile / llama-3.1-8b-instant (free tier)
 
-Fallback is triggered on:
-  - Rate limit (429)
-  - Overload / server errors (5xx)
-  - Connection / timeout errors
-  - Any other APIError from Anthropic
+Priority if multiple keys are set: OpenAI → Gemini → Groq.
 
-All agents call call_llm() — the provider switch is fully transparent to them.
+Model tiers used by agents:
+  OPUS   → best reasoning  (Judgment, Syllabus Intelligence)
+  SONNET → balanced        (Reputation, Study Context)
+  HAIKU  → fast/cheap      (all other agents)
 """
-
 import logging
-import anthropic
-from google import genai
-from google.genai import types as genai_types
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Model constants — used by every agent
-# ---------------------------------------------------------------------------
-OPUS = "claude-opus-4-6"
-SONNET = "claude-sonnet-4-6"
-HAIKU = "claude-haiku-4-5"
+# ── OpenAI model IDs ─────────────────────────────────────────────────────────
+OPUS = "gpt-4o"
+SONNET = "gpt-4o"
+HAIKU = "gpt-4o-mini"
 
-# Gemini equivalents, matched by capability tier
-_GEMINI_FALLBACK: dict[str, str] = {
-    OPUS: "gemini-2.5-pro",       # deepest reasoning ↔ deepest reasoning
-    SONNET: "gemini-2.0-flash",   # mid-tier synthesis ↔ mid-tier speed
-    HAIKU: "gemini-2.0-flash-lite",  # fast/cheap classification ↔ fast/cheap
+# ── Groq model IDs (OpenAI-compatible endpoint) ───────────────────────────────
+_GROQ_OPUS = "llama-3.3-70b-versatile"
+_GROQ_SONNET = "llama-3.3-70b-versatile"
+_GROQ_HAIKU = "llama-3.1-8b-instant"
+
+_OPENAI_TO_GROQ = {
+    "gpt-4o": _GROQ_OPUS,
+    "gpt-4o-mini": _GROQ_HAIKU,
 }
 
-# Anthropic errors that should trigger a fallback (not user errors)
-_FALLBACK_ON = (
-    anthropic.RateLimitError,
-    anthropic.APIStatusError,       # covers 5xx overload
-    anthropic.APIConnectionError,
-    anthropic.APITimeoutError,
-)
+# ── Gemini model IDs (Google AI Studio / AI Studio free tier) ────────────────
+_GEMINI_OPUS = "gemini-1.5-pro"
+_GEMINI_SONNET = "gemini-1.5-pro"
+_GEMINI_HAIKU = "gemini-2.0-flash"
 
-# ---------------------------------------------------------------------------
-# Clients (lazy-initialised)
-# ---------------------------------------------------------------------------
-_anthropic_client: anthropic.Anthropic | None = None
-_gemini_client: genai.Client | None = None
+_OPENAI_TO_GEMINI = {
+    "gpt-4o": _GEMINI_OPUS,
+    "gpt-4o-mini": _GEMINI_HAIKU,
+}
 
-
-def _get_anthropic() -> anthropic.Anthropic:
-    global _anthropic_client
-    if _anthropic_client is None:
-        _anthropic_client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    return _anthropic_client
+# ── Lazy-init clients ─────────────────────────────────────────────────────────
+_openai_client = None
+_groq_client = None
 
 
-def _get_gemini() -> genai.Client | None:
-    global _gemini_client
-    if _gemini_client is None:
-        if not settings.google_api_key:
-            return None
-        _gemini_client = genai.Client(api_key=settings.google_api_key)
-    return _gemini_client
+def _get_openai():
+    global _openai_client
+    if _openai_client is None:
+        from openai import OpenAI
+        _openai_client = OpenAI(api_key=settings.openai_api_key)
+    return _openai_client
 
 
-# ---------------------------------------------------------------------------
-# Anthropic call
-# ---------------------------------------------------------------------------
-def _call_anthropic(system: str, user: str, model: str, max_tokens: int, thinking: bool) -> str:
-    client = _get_anthropic()
-    kwargs: dict = {
-        "model": model,
-        "max_tokens": max_tokens,
-        "system": system,
-        "messages": [{"role": "user", "content": user}],
-    }
-    if thinking and model in (OPUS, SONNET):
-        kwargs["thinking"] = {"type": "adaptive"}
-
-    response = client.messages.create(**kwargs)
-    # Find first text block (skip thinking blocks if present)
-    for block in response.content:
-        if block.type == "text":
-            return block.text
-    return ""
+def _get_groq():
+    global _groq_client
+    if _groq_client is None:
+        from openai import OpenAI
+        _groq_client = OpenAI(
+            api_key=settings.groq_api_key,
+            base_url="https://api.groq.com/openai/v1",
+        )
+    return _groq_client
 
 
-# ---------------------------------------------------------------------------
-# Gemini fallback call
-# ---------------------------------------------------------------------------
-def _call_gemini(system: str, user: str, model: str, max_tokens: int) -> str:
-    client = _get_gemini()
-    if client is None:
-        raise RuntimeError("Gemini fallback requested but GOOGLE_API_KEY is not set.")
+# ── Public gateway ────────────────────────────────────────────────────────────
 
-    gemini_model = _GEMINI_FALLBACK.get(model, "gemini-2.0-flash")
-    full_prompt = f"{system}\n\n{user}" if system else user
-
-    response = client.models.generate_content(
-        model=gemini_model,
-        contents=full_prompt,
-        config=genai_types.GenerateContentConfig(
-            max_output_tokens=max_tokens,
-            temperature=0.2,
-        ),
-    )
-    return response.text or ""
-
-
-# ---------------------------------------------------------------------------
-# Public interface — used by all agents
-# ---------------------------------------------------------------------------
 async def call_llm(
     system: str,
     user: str,
@@ -120,34 +77,71 @@ async def call_llm(
     thinking: bool = False,
 ) -> str:
     """
-    Call Anthropic Claude. On retriable errors, fall back to Gemini.
-    Returns the text response from whichever provider succeeded.
+    Call the configured LLM provider.
+    Priority: OpenAI → Gemini → Groq. `thinking` is unused (API compatibility).
     """
-    # --- Primary: Anthropic ---
+    _ = thinking
+
+    if settings.openai_api_key:
+        return await _call_provider(_get_openai(), model, system, user, max_tokens)
+
+    if settings.gemini_api_key:
+        gem_name = _OPENAI_TO_GEMINI.get(model, _GEMINI_HAIKU)
+        return await _call_gemini(system, user, gem_name, max_tokens)
+
+    if settings.groq_api_key:
+        groq_model = _OPENAI_TO_GROQ.get(model, _GROQ_HAIKU)
+        return await _call_provider(_get_groq(), groq_model, system, user, max_tokens)
+
+    raise RuntimeError(
+        "No LLM configured. Set OPENAI_API_KEY, GEMINI_API_KEY, or GROQ_API_KEY in backend/.env"
+    )
+
+
+async def _call_provider(client, model: str, system: str, user: str, max_tokens: int) -> str:
     try:
-        text = _call_anthropic(system, user, model, max_tokens, thinking)
-        logger.debug("LLM response via Anthropic %s (%d chars)", model, len(text))
-        return text
-    except _FALLBACK_ON as exc:
-        if not settings.llm_fallback_enabled:
-            raise
-        logger.warning(
-            "Anthropic %s failed (%s: %s) — falling back to Gemini",
-            model, type(exc).__name__, exc,
+        response = client.chat.completions.create(
+            model=model,
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            temperature=0.2,
         )
-
-    # --- Fallback: Gemini ---
-    try:
-        text = _call_gemini(system, user, model, max_tokens)
-        logger.info("LLM response via Gemini fallback (%d chars)", len(text))
+        text = response.choices[0].message.content or ""
+        logger.debug("LLM %s → %d chars", model, len(text))
         return text
-    except Exception as gemini_exc:
-        logger.error("Gemini fallback also failed: %s", gemini_exc)
-        raise RuntimeError(
-            f"Both Anthropic and Gemini failed. "
-            f"Last Gemini error: {gemini_exc}"
-        ) from gemini_exc
+    except Exception as exc:
+        logger.error("LLM call failed (%s): %s", model, exc)
+        raise
 
 
-# Backwards-compatible alias used by older agent code
+async def _call_gemini(system: str, user: str, model: str, max_tokens: int) -> str:
+    import google.generativeai as genai
+
+    genai.configure(api_key=settings.gemini_api_key)
+    gmodel = genai.GenerativeModel(model, system_instruction=system)
+    try:
+        response = await gmodel.generate_content_async(
+            user,
+            generation_config=genai.types.GenerationConfig(
+                max_output_tokens=max_tokens,
+                temperature=0.2,
+            ),
+        )
+        try:
+            text = (response.text or "").strip()
+        except ValueError:
+            text = ""
+        if not text:
+            raise RuntimeError("Gemini returned an empty or blocked response")
+        logger.debug("LLM %s → %d chars", model, len(text))
+        return text
+    except Exception as exc:
+        logger.error("LLM call failed (%s): %s", model, exc)
+        raise
+
+
+# Backwards-compatible alias used by agent modules
 call_claude = call_llm

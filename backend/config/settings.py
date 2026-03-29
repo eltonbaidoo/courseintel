@@ -1,25 +1,28 @@
-from pydantic_settings import BaseSettings
 from typing import Optional
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # LLM providers
-    anthropic_api_key: str
-    google_api_key: Optional[str] = None
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # LLM provider — priority: OpenAI → Gemini → Groq (first key that is set wins)
+    # OpenAI: https://platform.openai.com/api-keys
+    openai_api_key: Optional[str] = None
+    # Google Gemini (free tier): https://aistudio.google.com/apikey — env: GEMINI_API_KEY
+    gemini_api_key: Optional[str] = None
+    # Groq (free tier, OpenAI-compatible): https://console.groq.com/keys
+    groq_api_key: Optional[str] = None
 
-    # Search
+    # Web search
     tavily_api_key: str
 
     # Supabase
     supabase_url: str
     supabase_service_key: str
-    supabase_jwt_secret: str           # Settings > API > JWT Secret in Supabase dashboard
+    supabase_jwt_secret: str
 
-    # CORS — comma-separated list of allowed origins
+    # CORS: comma-separated list of allowed origins
     cors_origins: str = "http://localhost:3000"
-
-    # LLM fallback
-    llm_fallback_enabled: bool = True
 
     # File upload limits
     max_upload_bytes: int = 10 * 1024 * 1024   # 10 MB
@@ -27,11 +30,25 @@ class Settings(BaseSettings):
     # Rate limiting (requests per minute per IP)
     rate_limit_per_minute: int = 30
 
-    # Internal health check token — set a long random string
+    # Internal health check token
     internal_health_token: Optional[str] = None
 
-    class Config:
-        env_file = ".env"
+    # Local dev only: accept fixed Bearer token instead of Supabase JWT (see deps.require_auth)
+    dev_auth_bypass: bool = False
+    dev_bearer_token: str = "courseintel-local-dev-bearer"
 
+    # Optional: Clerk session JWT (RS256) — JWKS URL from Clerk Dashboard → API Keys → Advanced
+    # Example: https://your-app.clerk.accounts.dev/.well-known/jwks.json
+    clerk_jwks_url: Optional[str] = None
+
+    @property
+    def llm_provider(self) -> str:
+        if self.openai_api_key:
+            return "openai"
+        if self.gemini_api_key:
+            return "gemini"
+        if self.groq_api_key:
+            return "groq"
+        return "none"
 
 settings = Settings()
