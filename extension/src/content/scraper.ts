@@ -1,6 +1,18 @@
 /**
- * Content script: runs on academic platform pages.
- * Extracts structured assignment/deadline data from the DOM.
+ * Content script: runs on academic LMS pages.
+ *
+ * Supported platforms with dedicated DOM selectors:
+ *   - Gradescope  (.js-assignmentRow, .table--assignments)
+ *   - Canvas      (.assignment, .ig-row — LTI and hosted instances)
+ *   - Brightspace (.d2l-table, .d2l-datalist-item)
+ *   - Generic fallback — date-pattern scan for any other LMS
+ *
+ * Platform detection is purely hostname-based (no permissions required beyond
+ * the host_permissions listed in manifest.json).
+ *
+ * Message API:
+ *   send  { type: "SCRAPE_PAGE" }
+ *   recv  { platform, url, items: ScrapedItem[], rawText }
  */
 
 interface ScrapedItem {
@@ -14,7 +26,7 @@ function detectPlatform(): string {
   const host = window.location.hostname;
   if (host.includes("gradescope")) return "gradescope";
   if (host.includes("instructure") || host.includes("canvas")) return "canvas";
-  if (host.includes("brightspace")) return "brightspace";
+  if (host.includes("brightspace") || host.includes("d2l")) return "brightspace";
   if (host.includes("edfinity")) return "edfinity";
   return "unknown";
 }
@@ -41,6 +53,21 @@ function scrapeCanvas(): ScrapedItem[] {
   return items;
 }
 
+function scrapeBrightspace(): ScrapedItem[] {
+  const items: ScrapedItem[] = [];
+  // D2L Brightspace: assignments table rows and datalist items
+  document.querySelectorAll(".d2l-table tr, .d2l-datalist-item").forEach((el) => {
+    const title = el.querySelector(".dco_title, .d2l-link, td:first-child")?.textContent?.trim() ?? "";
+    const due = el.querySelector(".d2l-dates-text, .ds-date")?.textContent?.trim() ?? null;
+    const link = el.querySelector("a")?.href ?? null;
+    if (title) {
+      const isExam = /quiz|exam|midterm|final/i.test(title);
+      items.push({ title, due_date: due, link, type: isExam ? "exam" : "assignment" });
+    }
+  });
+  return items;
+}
+
 function scrapeGeneric(): ScrapedItem[] {
   // Fallback: look for date-adjacent text patterns
   const items: ScrapedItem[] = [];
@@ -60,6 +87,7 @@ function scrape(): { items: ScrapedItem[]; rawText: string; platform: string; ur
 
   if (platform === "gradescope") items = scrapeGradescope();
   else if (platform === "canvas") items = scrapeCanvas();
+  else if (platform === "brightspace") items = scrapeBrightspace();
   else items = scrapeGeneric();
 
   return {
