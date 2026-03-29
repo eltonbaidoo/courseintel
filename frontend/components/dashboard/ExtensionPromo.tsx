@@ -19,7 +19,7 @@ export function ExtensionPromo() {
             against your course model.
           </p>
           <ul className="text-xs text-burnt-peach-500 space-y-1 list-disc list-inside">
-            <li>Stay on your real course pages — no manual copy-paste</li>
+            <li>Stay on your real course pages; no manual copy-paste</li>
             <li>Works alongside Tools &amp; Resources → Connect for per-platform tips</li>
           </ul>
         </div>

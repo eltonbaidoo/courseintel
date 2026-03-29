@@ -119,10 +119,10 @@ async def bootstrap_course(
         bootstrap_data["id"] = saved["id"]
     except Exception as exc:
         logger.error("Failed to persist course for user %s: %s", user_id, exc)
-        # Return data even if DB write fails — local-first approach
+        # Return data even if DB write fails (local-first approach)
         bootstrap_data["id"] = None
 
-    logger.info("Bootstrap complete for user %s — course: %s @ %s", user_id, course, university)
+    logger.info("Bootstrap complete for user %s | course: %s @ %s", user_id, course, university)
     return bootstrap_data
 
 
@@ -199,7 +199,7 @@ async def get_action_plan(
     missing_flags = []
     detected_tools = course.get("detected_tools", [])
     if not course_profile.get("grading_categories"):
-        missing_flags.append("No grading categories found — upload syllabus")
+        missing_flags.append("No grading categories found. Upload syllabus.")
     if not entries_raw:
         missing_flags.append("No grades entered yet")
     for tool in detected_tools:

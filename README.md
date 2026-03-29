@@ -39,8 +39,8 @@ npm run build
 
 ```
 backend/      FastAPI + agents (OpenAI: gpt-4o / gpt-4o-mini)
-frontend/     Next.js App Router — dashboard, auth, landing
-extension/    Chrome Manifest V3 — content script + service worker
+frontend/     Next.js App Router: dashboard, auth, landing
+extension/    Chrome Manifest V3: content script + service worker
 ```
 
 See `../Doc/EXECUTION_PLAN.md` for the full phased build plan.
@@ -49,7 +49,7 @@ See `../Doc/EXECUTION_PLAN.md` for the full phased build plan.
 
 ## Environment Variables
 
-### Backend — `backend/.env` (copy from `.env.example`)
+### Backend: `backend/.env` (copy from `.env.example`)
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
@@ -63,7 +63,7 @@ See `../Doc/EXECUTION_PLAN.md` for the full phased build plan.
 | `MAX_UPLOAD_BYTES` | No | Default 10 MB |
 | `RATE_LIMIT_PER_MINUTE` | No | Default 30 |
 
-### Frontend — `frontend/.env.local` (copy from `.env.local.example`)
+### Frontend: `frontend/.env.local` (copy from `.env.local.example`)
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
@@ -76,7 +76,7 @@ See `../Doc/EXECUTION_PLAN.md` for the full phased build plan.
 
 1. **Backend**: `cd backend && uvicorn main:app --reload` then `curl http://localhost:8000/health` → `{"status":"ok"}`.
 2. **Frontend**: `cd frontend && npm run dev` → open `http://localhost:3000`.
-3. **Full stack**: With both env files filled, sign up/in, add a course — agent routes need `OPENAI_API_KEY` + Tavily + Supabase.
+3. **Full stack**: With both env files filled, sign up/in, add a course. Agent routes need `OPENAI_API_KEY` + Tavily + Supabase.
 
 ### Low-memory local development
 
@@ -88,11 +88,11 @@ Running **Next.js dev (especially Turbopack)** and **`uvicorn --reload`** togeth
 |---------|-------------|
 | `npm run dev` | Default: **webpack** dev server, source maps off, Node heap capped at **~3 GB** (lighter than Turbopack on many machines). |
 | `npm run dev:turbo` | Faster refresh if you have RAM to spare. |
-| `npm run dev:prod` | **Lowest steady RAM**: production server after a one-time `build` (no hot reload — rebuild after code changes). |
+| `npm run dev:prod` | **Lowest steady RAM**: production server after a one-time `build` (no hot reload; rebuild after code changes). |
 
 Scripts use **`cross-env`** so `NODE_OPTIONS` works on macOS, Linux, and Windows.
 
-**Backend — avoid the reloader (saves ~1 extra Python process):**
+**Backend: avoid the reloader (saves ~1 extra Python process):**
 
 ```bash
 cd backend

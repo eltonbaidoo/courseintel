@@ -9,9 +9,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         href="/"
         className="mb-10 flex flex-col items-center gap-3 text-center transition-opacity hover:opacity-90"
       >
-        <div className="rounded-lg bg-almond-cream-50 px-3 py-2">
-          <CourseIntelLogo className="h-9 md:h-10" priority />
-        </div>
+        <CourseIntelLogo className="h-10 w-auto md:h-12" priority />
         <p className="font-condensed text-sm font-medium tracking-wide text-almond-cream-400">
           Know your course. Before it knows you.
         </p>

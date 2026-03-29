@@ -1,10 +1,10 @@
 """
-LLM gateway for CourseIntel agents — OpenAI only.
+LLM gateway for CourseIntel agents (OpenAI only).
 
 Model tiers (passed by agents; these are OpenAI model IDs):
-  OPUS   → gpt-4o   (deep reasoning — Judgment, Syllabus Intelligence)
-  SONNET → gpt-4o   (balanced — Reputation, Study Context)
-  HAIKU  → gpt-4o-mini  (fast — other agents)
+  OPUS   → gpt-4o   (deep reasoning: Judgment, Syllabus Intelligence)
+  SONNET → gpt-4o   (balanced: Reputation, Study Context)
+  HAIKU  → gpt-4o-mini  (fast: other agents)
 """
 import logging
 from config.settings import settings

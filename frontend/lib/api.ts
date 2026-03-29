@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { DEV_AUTH_BYPASS, DEV_BEARER_TOKEN, hasDevSessionCookie } from "@/lib/dev-auth";
 import type { BootstrapResponse } from "@/types/course";
 import type {
   ComputeGradeResponse,
@@ -40,6 +41,9 @@ export class ApiError extends Error {
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
+  if (DEV_AUTH_BYPASS && hasDevSessionCookie()) {
+    return { Authorization: `Bearer ${DEV_BEARER_TOKEN}` };
+  }
   const {
     data: { session },
   } = await supabase.auth.getSession();

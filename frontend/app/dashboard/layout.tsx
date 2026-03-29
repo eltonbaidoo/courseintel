@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAppStore } from "@/stores/app-store";
+import { clearDevSessionClient, hasDevSessionCookie } from "@/lib/dev-auth";
 import { CourseIntelLogo } from "@/components/brand/CourseIntelLogo";
 import LLMProviderBadge from "@/components/LLMProviderBadge";
 import DemoWelcomeBanner from "@/components/dashboard/DemoWelcomeBanner";
@@ -25,13 +26,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const user = useAppStore((s) => s.user);
+  const setUser = useAppStore((s) => s.setUser);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const courseMatch = pathname.match(/\/dashboard\/course\/([^/]+)/);
   const courseId = courseMatch?.[1];
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
+    if (hasDevSessionCookie()) {
+      clearDevSessionClient();
+      setUser(null);
+    } else {
+      await supabase.auth.signOut();
+    }
     router.push("/login");
   }
 
@@ -44,8 +51,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           className="group flex items-center gap-2.5"
           onClick={() => setSidebarOpen(false)}
         >
-          <span className="rounded-md bg-almond-cream-50 px-1.5 py-1 transition-opacity group-hover:opacity-90">
-            <CourseIntelLogo className="h-6 w-auto" />
+          <span className="transition-opacity group-hover:opacity-90">
+            <CourseIntelLogo variant="mark" className="h-8 w-8" />
           </span>
         </Link>
       </div>
@@ -126,8 +133,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span className="ml-3 rounded bg-almond-cream-50 px-1.5 py-0.5">
-          <CourseIntelLogo className="h-5 w-auto" />
+        <span className="ml-3">
+          <CourseIntelLogo variant="mark" className="h-7 w-7" />
         </span>
       </div>
 

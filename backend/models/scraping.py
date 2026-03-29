@@ -32,7 +32,7 @@ class ScrapePayload(BaseModel):
     course_id: str = Field(..., max_length=64)
     platform: str = Field(..., max_length=64)
     url: str = Field(..., max_length=2048)
-    raw_text: str = Field(..., max_length=15_000)   # hard cap — LLM context guard
+    raw_text: str = Field(..., max_length=15_000)   # hard cap; LLM context guard
     items: list[ScrapedItemRaw] = Field(default=[], max_length=100)
 
     @field_validator("platform")

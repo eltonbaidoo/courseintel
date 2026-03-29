@@ -29,7 +29,7 @@ export function LandingCommandCenter() {
                   <div className="mb-1 text-xs font-mono uppercase tracking-widest text-espresso-600">
                     Current standing
                   </div>
-                  <div className="text-2xl font-bold text-almond-cream-200">CS 301 — Data Structures</div>
+                  <div className="text-2xl font-bold text-almond-cream-200">CS 301: Data Structures</div>
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-almond-cream-50">B+</div>

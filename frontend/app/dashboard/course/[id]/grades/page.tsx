@@ -109,7 +109,7 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
     setForm({ title: "", category: categoryNames[0] ?? "Homework", earned: "", possible: "" });
     setShowForm(false);
     setSaving(false);
-    // Persist to backend (fire-and-forget — don't block UI)
+    // Persist to backend (fire-and-forget; don't block UI)
     api.addGradeEntry(id, {
       assignment_title: entry.assignmentTitle,
       category: entry.category,

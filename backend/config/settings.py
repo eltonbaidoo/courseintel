@@ -3,7 +3,7 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    # LLM — OpenAI only (agents use gpt-4o / gpt-4o-mini via logical tiers in agents/base.py)
+    # LLM: OpenAI only (agents use gpt-4o / gpt-4o-mini via logical tiers in agents/base.py)
     openai_api_key: Optional[str] = None
 
     # Web search
@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     supabase_service_key: str
     supabase_jwt_secret: str
 
-    # CORS — comma-separated list of allowed origins
+    # CORS: comma-separated list of allowed origins
     cors_origins: str = "http://localhost:3000"
 
     # File upload limits
@@ -25,6 +25,10 @@ class Settings(BaseSettings):
 
     # Internal health check token
     internal_health_token: Optional[str] = None
+
+    # Local dev only: accept fixed Bearer token instead of Supabase JWT (see deps.require_auth)
+    dev_auth_bypass: bool = False
+    dev_bearer_token: str = "courseintel-local-dev-bearer"
 
     @property
     def llm_provider(self) -> str:

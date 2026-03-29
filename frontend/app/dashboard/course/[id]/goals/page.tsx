@@ -152,7 +152,7 @@ export default function GoalSimulatorPage({ params }: { params: Promise<{ id: st
             {feasible
               ? `needed on the remaining ${remainingWeight}% of your grade to reach a ${target}`
               : goalResult?.message ??
-                `A ${target} is no longer mathematically achievable — it would require ${required.toFixed(0)}% on remaining work.`}
+                `A ${target} is no longer mathematically achievable; it would require ${required.toFixed(0)}% on remaining work.`}
           </p>
 
           {/* Visual path bar */}

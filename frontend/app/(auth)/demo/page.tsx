@@ -154,7 +154,7 @@ export default function DemoPage() {
               autoComplete="name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full rounded-xl border border-espresso-900/50 bg-shadow-grey-900/50 px-4 py-3 text-sm text-almond-cream-50 placeholder:text-espresso-800 focus:border-almond-cream-400 focus:outline-none focus:ring-2 focus:ring-almond-cream-400/20"
+              className="w-full rounded-xl border border-espresso-600/60 bg-shadow-grey-800/40 px-4 py-3 text-sm text-almond-cream-50 placeholder:text-shadow-grey-400 focus:border-almond-cream-400 focus:outline-none focus:ring-2 focus:ring-almond-cream-400/20"
               placeholder="e.g. Alex"
             />
           </div>
@@ -198,7 +198,7 @@ export default function DemoPage() {
             href="/login?next=/dashboard&from=demo"
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-espresso-800/50 bg-shadow-grey-900/30 py-3 text-sm font-medium text-almond-cream-200 transition-colors hover:border-burnt-peach-500 hover:bg-shadow-grey-900/50"
           >
-            I already have an account — sign in
+            I already have an account: sign in
             <ArrowRight className="h-4 w-4 opacity-70" />
           </Link>
 
@@ -231,7 +231,7 @@ export default function DemoPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-espresso-900/50 bg-shadow-grey-900/50 px-4 py-3 text-sm text-almond-cream-50 placeholder:text-espresso-800 focus:border-almond-cream-400 focus:outline-none focus:ring-2 focus:ring-almond-cream-400/20"
+                className="w-full rounded-xl border border-espresso-600/60 bg-shadow-grey-800/40 px-4 py-3 text-sm text-almond-cream-50 placeholder:text-shadow-grey-400 focus:border-almond-cream-400 focus:outline-none focus:ring-2 focus:ring-almond-cream-400/20"
                 placeholder="you@university.edu"
               />
             </div>
@@ -249,7 +249,7 @@ export default function DemoPage() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-espresso-900/50 bg-shadow-grey-900/50 px-4 py-3 text-sm text-almond-cream-50 placeholder:text-espresso-800 focus:border-almond-cream-400 focus:outline-none focus:ring-2 focus:ring-almond-cream-400/20"
+                className="w-full rounded-xl border border-espresso-600/60 bg-shadow-grey-800/40 px-4 py-3 text-sm text-almond-cream-50 placeholder:text-shadow-grey-400 focus:border-almond-cream-400 focus:outline-none focus:ring-2 focus:ring-almond-cream-400/20"
                 placeholder="At least 6 characters"
               />
             </div>

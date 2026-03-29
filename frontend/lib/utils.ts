@@ -14,7 +14,7 @@ export function formatDate(dateStr: string | null | undefined): string {
   });
 }
 
-/** Urgency chips — palette only (espresso / burnt-peach / almond-cream). */
+/** Urgency chips; palette only (espresso / burnt-peach / almond-cream). */
 export function urgencyColor(urgency: string): string {
   if (urgency === "high")
     return "text-espresso-900 bg-espresso-100";
@@ -23,7 +23,7 @@ export function urgencyColor(urgency: string): string {
   return "text-almond-cream-800 bg-almond-cream-50";
 }
 
-/** Risk pills — palette only. */
+/** Risk pills; palette only. */
 export function riskColor(risk: string): string {
   if (risk === "critical")
     return "bg-espresso-900 text-almond-cream-50";

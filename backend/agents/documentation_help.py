@@ -10,7 +10,7 @@ PLATFORM_DOCS: dict[str, str] = {
     "canvas": "Canvas is a Learning Management System. Assignment due dates are on the Assignments page or the Calendar view.",
     "brightspace": "Brightspace (D2L) stores assignments under Content or Assignments. The course home shows upcoming items.",
     "edfinity": "Edfinity is used for math/science problem sets. The dashboard shows active assignments and their deadlines.",
-    "piazza": "Piazza is a Q&A platform. It does not typically have assignment due dates — check Canvas or Gradescope instead.",
+    "piazza": "Piazza is a Q&A platform. It does not typically have assignment due dates; check Canvas or Gradescope instead.",
 }
 
 SYSTEM = """

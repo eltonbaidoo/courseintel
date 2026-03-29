@@ -8,19 +8,19 @@ import { glassPanelInteractive, sectionAnchor } from "../landing-ui";
 const CARDS = [
   {
     title: "Deadlines scattered everywhere",
-    body: "Canvas, email, PDFs, Slack — your deadlines live in six places and none of them talk to each other.",
+    body: "Canvas, email, PDFs, Slack: your deadlines live in six places and none of them talk to each other.",
     icon: TriangleAlert,
     iconWrap: "bg-burnt-peach-500/15 text-burnt-peach-500",
   },
   {
     title: "Syllabi are unreadable contracts",
-    body: "Dense, inconsistent, and buried in policy language. The information you need is there — just impossible to extract.",
+    body: "Dense, inconsistent, and buried in policy language. The information you need is there, but impossible to extract.",
     icon: FileText,
     iconWrap: "bg-espresso-900 text-almond-cream-400",
   },
   {
     title: "Grades are black boxes",
-    body: "Weighted categories, curved scores, dropped lowest — you can't calculate your standing without a spreadsheet.",
+    body: "Weighted categories, curved scores, dropped lowest: you can't calculate your standing without a spreadsheet.",
     icon: LineChart,
     iconWrap: "bg-almond-cream-500/15 text-almond-cream-500",
   },

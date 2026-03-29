@@ -44,7 +44,7 @@ const robotoSlab = Roboto_Slab({
 });
 
 export const metadata: Metadata = {
-  title: "CourseIntel — Know your course.",
+  title: "CourseIntel: Know your course.",
   description: "A multi-agent academic intelligence engine for students.",
 };
 

@@ -13,7 +13,7 @@
     --text-on-dark: #f3e6d8;
     --text-muted-dark: #cd9b65;
     --border-light: #e6cdb2;
-    /* almond-cream (component tokens — matches tailwind almond-cream scale) */
+    /* almond-cream (component tokens; matches tailwind almond-cream scale) */
     --almond-cream-100: #f3e6d8;
     --almond-cream-300: #dab48b;
     --accent-warm: #c1823e;
@@ -224,6 +224,15 @@
 .glass {
   background: #1b1918;
   border: 1px solid #462720;
+}
+
+/* 3D book idle float */
+@keyframes bookFloat {
+  0%, 100% { transform: translateY(0px) rotateZ(0deg); }
+  50%       { transform: translateY(-10px) rotateZ(0.4deg); }
+}
+.book-float {
+  animation: bookFloat 5s ease-in-out infinite;
 }
 
 .otp-input {

@@ -1,5 +1,5 @@
 """
-Auth routes — thin stubs only.
+Auth routes: thin stubs only.
 All real authentication is handled client-side via Supabase Auth SDK.
 Supabase issues JWTs; the backend validates them on protected routes.
 Passwords NEVER touch this server.

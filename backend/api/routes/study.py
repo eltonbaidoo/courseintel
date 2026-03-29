@@ -129,7 +129,7 @@ async def analyze_study_context(
     result = await study_context.run(agent_input)
 
     logger.info(
-        "Study context analysis for course %s — %d materials, %d topics",
+        "Study context analysis for course %s | %d materials, %d topics",
         course_id, len(agent_input), len(result.get("key_topics", [])),
     )
 

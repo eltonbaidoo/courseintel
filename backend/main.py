@@ -12,7 +12,7 @@ from api.routes import courses, grades, extension, auth, health, study
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    format="%(asctime)s %(levelname)s %(name)s | %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "script-src 'none'; "
             "object-src 'none';"
         )
-        response.headers.pop("Server", None)
+        try:
+            del response.headers["server"]
+        except KeyError:
+            pass
         return response
 
 
@@ -65,14 +68,14 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Global exception handlers — never expose internals to clients
+# Global exception handlers; never expose internals to clients
 # ---------------------------------------------------------------------------
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request: Request, exc: RequestValidationError):
     logger.warning("Validation error on %s: %s", request.url.path, exc.errors())
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": "Invalid request — check your input and try again."},
+        content={"detail": "Invalid request. Check your input and try again."},
     )
 
 
