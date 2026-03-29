@@ -268,7 +268,10 @@ For a student taking 4–5 courses per semester, this is **3–7.5 hours of low-
 | 7 dashboard screens | Complete | Next.js 16 App Router, all screens documented in `docs/SCREENS.md` |
 | CI pipeline | Complete | GitHub Actions: Python pytest, Jest, TypeScript check, Next.js build, Playwright E2E |
 | Production deployment | Complete | Vercel (frontend), Render (backend), Supabase (database) |
-| **Total tests** | **67 Python + 29 TypeScript + Playwright E2E** | All passing in CI |
+| LLM response cache (SHA-256, TTL, metrics) | Complete | `services/llm_cache.py`, `GET /health/cache`, wired into `call_llm()` |
+| SSE streaming bootstrap | Complete | `POST /courses/bootstrap/stream`, `text/event-stream`, frontend `ReadableStream` consumer |
+| Grade trend UI (frontend) | Complete | Grades page calls `GET /grades/courses/:id/trend`, shows slope + projected final |
+| **Total tests** | **75 Python + 29 TypeScript + Playwright E2E** | All passing in CI |
 
 ### Hourly execution log (solo developer)
 
@@ -279,7 +282,7 @@ For a student taking 4–5 courses per semester, this is **3–7.5 hours of low-
 | Grade engine (weighted average, goal solver, trend) | 10–12 | Deterministic math + linear regression |
 | Chrome extension (3 scrapers, service worker) | 12–15 | MV3 extension with Supabase sync |
 | Job queue + priority scheduler + reaper | 15–18 | Async bootstrap, obligation ranking, background reaper |
-| Testing (67 Python + 29 TS + E2E) | 18–21 | Full test suite, CI pipeline |
+| Testing (75 Python + 29 TS + E2E) | 18–21 | Full test suite, CI pipeline |
 | Deployment + documentation | 21–24 | Vercel + Render live, 7 docs files |
 
 ---
@@ -306,7 +309,7 @@ For a student taking 4–5 courses per semester, this is **3–7.5 hours of low-
 
 1. **No workflow definition required.** LangGraph and CrewAI require developers to define agent graphs. CourseIntel's planner generates the execution plan from the task type alone.
 2. **Domain-specific agent specialization.** Each of the 13 agents has a tailored system prompt, model tier assignment, and typed output schema. A general-purpose agent framework can't match this without equal domain investment.
-3. **Deterministic grade math alongside LLM intelligence.** The algebraic grade solver and linear regression trend predictor are provably correct (67 tests). The LLM handles fuzzy intelligence (syllabus parsing, reputation). This hybrid architecture is more reliable than pure-LLM approaches.
+3. **Deterministic grade math alongside LLM intelligence.** The algebraic grade solver and linear regression trend predictor are provably correct (75 tests). The LLM handles fuzzy intelligence (syllabus parsing, reputation). This hybrid architecture is more reliable than pure-LLM approaches.
 4. **Live data pipeline via Chrome extension.** 3 DOM scrapers with real CSS selectors that sync grades from Gradescope/Canvas/Brightspace into the grade model. This is not scaffolding — 29 Jest tests validate the parsing logic.
 
 ---
