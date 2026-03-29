@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { CourseIntelLogo } from "@/components/brand/CourseIntelLogo";
 
 function VerifyForm() {
   const router = useRouter();
@@ -246,12 +247,20 @@ function VerifyForm() {
 
 export default function VerifyPage() {
   return (
-    <Suspense fallback={
-      <div className="glass rounded-2xl p-8 text-center">
-        <div className="animate-spin h-8 w-8 mx-auto border-2 border-burnt-peach-500 border-t-transparent rounded-full" />
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+      <Link href="/" className="mb-10 flex flex-col items-center gap-3 text-center transition-opacity hover:opacity-90">
+        <CourseIntelLogo className="h-10 w-auto md:h-12" priority />
+        <p className="font-condensed text-sm font-medium tracking-wide text-almond-cream-400">Know your course. Before it knows you.</p>
+      </Link>
+      <div className="w-full max-w-[420px]">
+        <Suspense fallback={
+          <div className="glass rounded-2xl p-8 text-center">
+            <div className="animate-spin h-8 w-8 mx-auto border-2 border-burnt-peach-500 border-t-transparent rounded-full" />
+          </div>
+        }>
+          <VerifyForm />
+        </Suspense>
       </div>
-    }>
-      <VerifyForm />
-    </Suspense>
+    </div>
   );
 }

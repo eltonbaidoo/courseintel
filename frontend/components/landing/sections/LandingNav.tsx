@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { PlayCircle } from "lucide-react";
 
 import { CourseIntelLogo } from "@/components/brand/CourseIntelLogo";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { glassNav } from "../landing-ui";
@@ -45,18 +43,6 @@ export function LandingNav() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link
-            href="/demo"
-            className="inline-flex items-center gap-1.5 rounded-full border border-espresso-800 bg-shadow-grey-900/90 px-4 py-2 text-sm font-medium text-almond-cream-300 outline-none transition-all duration-200 ease-out hover:border-espresso-700 hover:bg-espresso-950 hover:text-almond-cream-50 focus-visible:ring-2 focus-visible:ring-burnt-peach-400/45"
-          >
-            <PlayCircle className="h-4 w-4 text-burnt-peach-400" aria-hidden />
-            Try demo
-          </Link>
-          <Button variant="base44" className="rounded-full px-5 py-2 text-sm font-medium" asChild>
-            <Link href="/signup">Get early access</Link>
-          </Button>
-        </div>
       </div>
     </header>
   );
