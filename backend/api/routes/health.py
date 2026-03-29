@@ -3,6 +3,7 @@ Health endpoints.
 GET /health        | public liveness check
 GET /health/llm    | provider reachability (gated by X-Internal-Token)
 GET /health/agents | live agent ping — actually calls the LLM (gated by X-Internal-Token)
+GET /health/cache  | LLM response cache metrics (public — no secrets exposed)
 """
 import logging
 from fastapi import APIRouter, Header, HTTPException, status
@@ -72,6 +73,21 @@ async def llm_status(x_internal_token: str | None = Header(default=None)):
         "gemini": gemini_ok,
         "groq": groq_ok,
     }
+
+
+@router.get("/cache")
+async def cache_stats():
+    """
+    LLM response cache metrics.
+
+    Returns real-time hit/miss counters, hit rate, live entry count, and
+    backend type.  A hit_rate near 0 is expected on first bootstrap; repeated
+    bootstraps for the same course should approach 1.0.
+
+    No token required — these are operational metrics with no sensitive data.
+    """
+    from services.llm_cache import stats
+    return stats()
 
 
 @router.get("/agents")

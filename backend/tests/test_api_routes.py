@@ -535,3 +535,103 @@ def test_bootstrap_stream_emits_stage_events():
     for stage in STAGE_NAMES:
         assert stage in body, f"Stage {stage!r} not found in SSE stream"
     assert '"type": "result"' in body or '"type":"result"' in body
+
+
+# ── LLM response cache ────────────────────────────────────────────────────────
+
+def test_cache_stats_endpoint():
+    """GET /health/cache returns cache metrics with expected keys."""
+    res = client.get("/health/cache")
+    assert res.status_code == 200
+    data = res.json()
+    for key in ("hits", "misses", "total_requests", "hit_rate", "cached_entries",
+                "max_entries", "ttl_seconds", "backend"):
+        assert key in data, f"Missing key {key!r} in /health/cache response"
+    assert data["backend"] == "in-memory"
+    assert data["ttl_seconds"] == 3600
+    assert 0.0 <= data["hit_rate"] <= 1.0
+
+
+def test_cache_make_key_deterministic():
+    """Same inputs always produce the same SHA-256 cache key."""
+    import asyncio
+    from services.llm_cache import make_key
+
+    k1 = make_key("gpt-4o-mini", "You are a test agent.", "PING")
+    k2 = make_key("gpt-4o-mini", "You are a test agent.", "PING")
+    assert k1 == k2
+    assert len(k1) == 64  # SHA-256 hex digest
+
+
+def test_cache_model_scoping():
+    """Different models produce different keys for the same prompts."""
+    from services.llm_cache import make_key
+
+    k_mini = make_key("gpt-4o-mini", "sys", "usr")
+    k_full = make_key("gpt-4o", "sys", "usr")
+    assert k_mini != k_full
+
+
+def test_cache_get_set_hit_miss():
+    """Cache stores a value and serves it on the next get; miss before set."""
+    import asyncio
+    from services import llm_cache
+
+    async def _run():
+        key = llm_cache.make_key("test-model", "sys-test", "usr-test-unique-xyz")
+        # Ensure a clean slate for this key
+        await llm_cache.invalidate(key)
+
+        before = await llm_cache.get(key)
+        assert before is None  # cold miss
+
+        await llm_cache.set(key, "cached response", ttl=60)
+        after = await llm_cache.get(key)
+        assert after == "cached response"  # hit
+
+    asyncio.get_event_loop().run_until_complete(_run())
+
+
+def test_cache_ttl_expiry():
+    """An entry with TTL=0 is immediately expired on the next get."""
+    import asyncio
+    from services import llm_cache
+
+    async def _run():
+        key = llm_cache.make_key("test-model", "sys-expiry", "usr-expiry-unique")
+        await llm_cache.set(key, "will expire", ttl=0)
+        result = await llm_cache.get(key)
+        assert result is None  # expired immediately
+
+    asyncio.get_event_loop().run_until_complete(_run())
+
+
+def test_cache_deduplicates_llm_calls():
+    """call_llm returns cached value on second call without hitting the provider."""
+    import asyncio
+    from unittest.mock import AsyncMock, patch
+
+    async def _run():
+        from agents.base import call_llm, HAIKU
+        from services import llm_cache
+
+        # Clear any existing cache entry for this exact prompt
+        key = llm_cache.make_key(HAIKU, "sys-dedup", "usr-dedup-unique-prompt")
+        await llm_cache.invalidate(key)
+
+        mock_provider = AsyncMock(return_value="provider response")
+        with patch("agents.base._call_provider", mock_provider):
+            with patch("agents.base.settings") as mock_settings:
+                mock_settings.openai_api_key = "fake-key"
+                mock_settings.gemini_api_key = None
+                mock_settings.groq_api_key = None
+
+                r1 = await call_llm("sys-dedup", "usr-dedup-unique-prompt", model=HAIKU)
+                r2 = await call_llm("sys-dedup", "usr-dedup-unique-prompt", model=HAIKU)
+
+        assert r1 == "provider response"
+        assert r2 == "provider response"
+        # Provider was called only once — second call was served from cache
+        assert mock_provider.call_count == 1
+
+    asyncio.get_event_loop().run_until_complete(_run())

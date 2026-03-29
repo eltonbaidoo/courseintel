@@ -21,6 +21,7 @@ Retry policy:
 import asyncio
 import logging
 from config.settings import settings
+from services import llm_cache
 
 logger = logging.getLogger(__name__)
 
@@ -105,22 +106,31 @@ async def call_llm(
     """
     _ = thinking
 
+    # ── Cache lookup ──────────────────────────────────────────────────────────
+    cache_key = llm_cache.make_key(model, system, user)
+    cached = await llm_cache.get(cache_key)
+    if cached is not None:
+        logger.debug("LLM cache hit | model=%s key=%s…", model, cache_key[:8])
+        return cached
+
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
             if settings.openai_api_key:
-                return await _call_provider(_get_openai(), model, system, user, max_tokens)
-
-            if settings.gemini_api_key:
+                result = await _call_provider(_get_openai(), model, system, user, max_tokens)
+            elif settings.gemini_api_key:
                 gem_name = _OPENAI_TO_GEMINI.get(model, _GEMINI_HAIKU)
-                return await _call_gemini(system, user, gem_name, max_tokens)
-
-            if settings.groq_api_key:
+                result = await _call_gemini(system, user, gem_name, max_tokens)
+            elif settings.groq_api_key:
                 groq_model = _OPENAI_TO_GROQ.get(model, _GROQ_HAIKU)
-                return await _call_provider(_get_groq(), groq_model, system, user, max_tokens)
+                result = await _call_provider(_get_groq(), groq_model, system, user, max_tokens)
+            else:
+                raise RuntimeError(
+                    "No LLM configured. Set OPENAI_API_KEY, GEMINI_API_KEY, or GROQ_API_KEY in backend/.env"
+                )
 
-            raise RuntimeError(
-                "No LLM configured. Set OPENAI_API_KEY, GEMINI_API_KEY, or GROQ_API_KEY in backend/.env"
-            )
+            # ── Cache store on success ────────────────────────────────────────
+            await llm_cache.set(cache_key, result)
+            return result
 
         except RuntimeError:
             # No key configured — not transient, fail immediately
