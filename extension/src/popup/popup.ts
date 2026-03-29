@@ -40,7 +40,7 @@ async function init() {
   // TODO: load courses from Supabase and populate courseSelect
   const option = document.createElement("option");
   option.value = "demo-course-id";
-  option.textContent = "CS 4400 — Georgia Tech";
+  option.textContent = "CS 4400, Georgia Tech";
   courseSelect.appendChild(option);
   courseSelect.value = "demo-course-id";
 }
@@ -49,7 +49,7 @@ captureBtn.addEventListener("click", async () => {
   const courseId = courseSelect.value;
   if (!courseId) { showResult("Please select a course first.", true); return; }
 
-  // Retrieve stored auth token — set when user logs in via the web app
+  // Retrieve stored auth token; set when user logs in via the web app
   const { authToken } = await chrome.storage.local.get("authToken");
   if (!authToken) {
     showResult("Not signed in. Open CourseIntel and log in first.", true);

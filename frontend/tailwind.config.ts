@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-/** Exclusive palettes — all UI colors derive from these scales. */
+/** Exclusive palettes; all UI colors derive from these scales. */
 const palettes = {
   "shadow-grey": {
     50: "#f3f2f1",
@@ -94,7 +94,7 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
         display: ["var(--font-roboto)", "sans-serif"],
-        /** Playfair Display — editorial headings on marketing */
+        /** Playfair Display for editorial headings on marketing */
         serifDisplay: ["var(--font-playfair)", "Georgia", "serif"],
         condensed: ["var(--font-roboto-condensed)", "sans-serif"],
         slab: ["var(--font-roboto-slab)", "serif"],

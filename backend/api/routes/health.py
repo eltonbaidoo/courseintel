@@ -1,7 +1,7 @@
 """
 Health endpoints.
-GET /health        — public liveness check
-GET /health/llm    — internal provider status, gated by X-Internal-Token header
+GET /health        | public liveness check
+GET /health/llm    | internal provider status, gated by X-Internal-Token header
 """
 import logging
 from fastapi import APIRouter, Header, HTTPException, status

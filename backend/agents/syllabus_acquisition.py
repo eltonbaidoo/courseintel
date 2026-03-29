@@ -45,6 +45,6 @@ Evaluate which result is most likely a real course syllabus.
         except Exception:
             result["syllabus_text"] = None
             result["found"] = False
-            result["reason"] = "PDF could not be fetched — please upload manually."
+            result["reason"] = "PDF could not be fetched. Please upload manually."
 
     return result

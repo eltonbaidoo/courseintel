@@ -57,7 +57,7 @@ export function DashboardStats({
     },
     {
       label: "Avg. grade",
-      value: s.avgGrade != null ? `${s.avgGrade.toFixed(1)}%` : "—",
+      value: s.avgGrade != null ? `${s.avgGrade.toFixed(1)}%` : "-",
       hint:
         s.gradedCourses > 0
           ? `${s.gradedCourses} course${s.gradedCourses !== 1 ? "s" : ""} with entries`

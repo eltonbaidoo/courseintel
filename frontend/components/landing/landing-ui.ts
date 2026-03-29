@@ -1,4 +1,4 @@
-/** Shared Tailwind patterns for the marketing page — keeps panels consistent. */
+/** Shared Tailwind patterns for the marketing page; keeps panels consistent. */
 
 export const sectionAnchor = "scroll-mt-24 md:scroll-mt-28";
 

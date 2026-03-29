@@ -12,7 +12,7 @@ export default function DemoWelcomeBanner() {
       const demo = sessionStorage.getItem(DEMO_FLOW_KEY);
       if (name?.trim() && demo === "1") {
         setMessage(
-          `Welcome, ${name.trim()}! You're set up — add a course to see CourseIntel in action.`,
+          `Welcome, ${name.trim()}! You're set up. Add a course to see CourseIntel in action.`,
         );
       }
     } catch {

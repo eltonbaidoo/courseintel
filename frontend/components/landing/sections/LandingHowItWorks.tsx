@@ -9,7 +9,7 @@ const STEPS = [
   {
     n: "01",
     title: "Enter your course",
-    body: "Add your course details and upload your syllabus. PDF, DOCX, or paste the text — CourseIntel handles it all.",
+    body: "Add your course details and upload your syllabus. PDF, DOCX, or paste the text. CourseIntel handles it all.",
     icon: Upload,
     iconWrap: "bg-burnt-peach-500/10 text-burnt-peach-400",
   },
@@ -23,14 +23,14 @@ const STEPS = [
   {
     n: "03",
     title: "Intelligence builds",
-    body: "CourseIntel constructs a live model of your course — grading logic, deadlines, priorities, risk factors.",
+    body: "CourseIntel constructs a live model of your course: grading logic, deadlines, priorities, risk factors.",
     icon: Cpu,
     iconWrap: "bg-burnt-peach-500/10 text-burnt-peach-400",
   },
   {
     n: "04",
     title: "Get clear answers",
-    body: "Receive grade predictions, action plans, risk alerts, and study context — updated as your semester evolves.",
+    body: "Receive grade predictions, action plans, risk alerts, and study context, updated as your semester evolves.",
     icon: Sparkles,
     iconWrap: "bg-almond-cream-500/10 text-almond-cream-400",
   },

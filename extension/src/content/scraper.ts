@@ -1,5 +1,5 @@
 /**
- * Content script — runs on academic platform pages.
+ * Content script: runs on academic platform pages.
  * Extracts structured assignment/deadline data from the DOM.
  */
 

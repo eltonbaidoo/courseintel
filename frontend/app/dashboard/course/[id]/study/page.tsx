@@ -75,7 +75,7 @@ export default function StudyBuddyPage({ params }: { params: Promise<{ id: strin
           Study Buddy
         </h1>
         <p className="text-burnt-peach-500 text-sm mt-1">
-          Upload notes and study materials — the Study Context Agent identifies weak areas and priorities.
+          Upload notes and study materials. The Study Context Agent identifies weak areas and priorities.
         </p>
       </div>
 
@@ -193,7 +193,7 @@ export default function StudyBuddyPage({ params }: { params: Promise<{ id: strin
         <div className="card p-5">
           <p className="section-label mb-3">Course Topics</p>
           <p className="text-xs text-almond-cream-400 mb-3">
-            Grading categories from your syllabus — study focus areas.
+            Grading categories from your syllabus: study focus areas.
           </p>
           <div className="flex flex-wrap gap-2">
             {categories.map((c) => (

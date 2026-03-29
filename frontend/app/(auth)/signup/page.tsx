@@ -69,7 +69,7 @@ export default function SignupPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-shadow-grey-900/50 border border-espresso-900/50 text-almond-cream-50 text-sm placeholder:text-espresso-800 focus:border-almond-cream-400 focus:ring-2 focus:ring-almond-cream-400/20 focus:outline-none transition-all duration-200"
+            className="w-full px-4 py-3 rounded-xl bg-shadow-grey-800/40 border border-espresso-600/60 text-almond-cream-50 text-sm placeholder:text-shadow-grey-400 focus:border-almond-cream-400 focus:ring-2 focus:ring-almond-cream-400/20 focus:outline-none transition-all duration-200"
             placeholder="you@university.edu"
           />
         </div>
@@ -85,7 +85,7 @@ export default function SignupPage() {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-shadow-grey-900/50 border border-espresso-900/50 text-almond-cream-50 text-sm placeholder:text-espresso-800 focus:border-almond-cream-400 focus:ring-2 focus:ring-almond-cream-400/20 focus:outline-none transition-all duration-200"
+            className="w-full px-4 py-3 rounded-xl bg-shadow-grey-800/40 border border-espresso-600/60 text-almond-cream-50 text-sm placeholder:text-shadow-grey-400 focus:border-almond-cream-400 focus:ring-2 focus:ring-almond-cream-400/20 focus:outline-none transition-all duration-200"
             placeholder="At least 6 characters"
           />
         </div>

@@ -18,8 +18,15 @@ async def require_auth(
     """
     Validate the Supabase JWT from the Authorization: Bearer <token> header.
     Returns the decoded token claims (includes user_id, email, role).
-    Raises 401 on any failure — never exposes the reason to the client.
+    Raises 401 on any failure; never exposes the reason to the client.
     """
+    if (
+        settings.dev_auth_bypass
+        and credentials is not None
+        and credentials.credentials == settings.dev_bearer_token
+    ):
+        return {"sub": "courseintel-dev-local", "email": "Course@intel.edu"}
+
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 

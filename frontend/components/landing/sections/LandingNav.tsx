@@ -22,10 +22,11 @@ export function LandingNav() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link
           href="/"
-          className="flex items-center gap-2 rounded-lg outline-none ring-burnt-peach-400/50 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-shadow-grey-950"
+          className="flex items-center gap-2.5 rounded-lg outline-none ring-burnt-peach-400/50 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-shadow-grey-950"
         >
-          <span className="rounded-lg bg-almond-cream-50 px-2 py-1">
-            <CourseIntelLogo className="h-7 w-auto md:h-8" priority />
+          <CourseIntelLogo variant="mark" className="h-9 w-9 md:h-10 md:w-10" priority />
+          <span className="font-display text-base font-semibold tracking-wide text-almond-cream-100">
+            CourseIntel
           </span>
         </Link>
 

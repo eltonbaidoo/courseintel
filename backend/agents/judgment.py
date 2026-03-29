@@ -21,7 +21,7 @@ Inputs you receive:
 Decision rules:
 - High urgency = due within 3 days or grade at risk
 - Recommend connecting missing tools if they affect grade calculation
-- Do not recommend everything — pick the top 5 actions max
+- Do not recommend everything; pick the top 5 actions max
 - Be direct. Students need clarity, not encouragement.
 
 Return JSON with:

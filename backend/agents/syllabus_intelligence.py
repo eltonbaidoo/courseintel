@@ -1,7 +1,7 @@
 """
 Syllabus Intelligence Agent
 Extracts grading structure, deadlines, tools, policies from syllabus text.
-Uses Opus for highest accuracy — this is the core extraction agent.
+Uses Opus for highest accuracy; this is the core extraction agent.
 """
 import json
 from agents.base import call_llm as call_claude, OPUS

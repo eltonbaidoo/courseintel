@@ -4,6 +4,13 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useAppStore } from "@/stores/app-store";
+import {
+  devCredentialsMatch,
+  devSessionEmail,
+  DEV_USER_ID,
+  setDevSessionClient,
+} from "@/lib/dev-auth";
 
 function safeNext(raw: string | null): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
@@ -13,6 +20,7 @@ function safeNext(raw: string | null): string {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const setUser = useAppStore((s) => s.setUser);
   const nextPath = safeNext(searchParams.get("next"));
   const fromDemo = searchParams.get("from") === "demo";
 
@@ -26,6 +34,15 @@ function LoginForm() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    if (devCredentialsMatch(email, password)) {
+      await supabase.auth.signOut();
+      setDevSessionClient();
+      setUser({ id: DEV_USER_ID, email: devSessionEmail() });
+      router.push(nextPath);
+      setLoading(false);
+      return;
+    }
 
     const { error: authError } = await supabase.auth.signInWithPassword({
       email,
@@ -77,7 +94,7 @@ function LoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-espresso-900/50 bg-shadow-grey-900/50 py-3 pl-11 pr-4 text-sm text-almond-cream-50 placeholder:text-espresso-800 transition-all duration-200 focus:border-almond-cream-400 focus:outline-none focus:ring-2 focus:ring-almond-cream-400/20"
+              className="w-full rounded-xl border border-espresso-600/60 bg-shadow-grey-800/40 py-3 pl-11 pr-4 text-sm text-almond-cream-50 placeholder:text-shadow-grey-400 transition-all duration-200 focus:border-almond-cream-400 focus:outline-none focus:ring-2 focus:ring-almond-cream-400/20"
               placeholder="you@university.edu"
             />
             <svg className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-espresso-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -98,7 +115,7 @@ function LoginForm() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-espresso-900/50 bg-shadow-grey-900/50 py-3 pl-11 pr-12 text-sm text-almond-cream-50 placeholder:text-espresso-800 transition-all duration-200 focus:border-almond-cream-400 focus:outline-none focus:ring-2 focus:ring-almond-cream-400/20"
+              className="w-full rounded-xl border border-espresso-600/60 bg-shadow-grey-800/40 py-3 pl-11 pr-12 text-sm text-almond-cream-50 placeholder:text-shadow-grey-400 transition-all duration-200 focus:border-almond-cream-400 focus:outline-none focus:ring-2 focus:ring-almond-cream-400/20"
               placeholder="Enter your password"
             />
             <svg className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-espresso-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

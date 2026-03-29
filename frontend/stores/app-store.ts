@@ -73,7 +73,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "courseintel-store",
-      // Don't persist user — Supabase session handles that
+      // Don't persist user; Supabase session handles that
       partialize: (state) => ({
         courses: state.courses,
         gradeEntries: state.gradeEntries,

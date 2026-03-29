@@ -30,9 +30,10 @@ export function LandingFooter() {
     <footer className="border-t border-espresso-900/80 bg-shadow-grey-950 px-6 py-16 md:py-20">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 md:grid-cols-5">
         <div className="md:col-span-2">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="rounded-lg bg-almond-cream-50 px-2 py-1">
-              <CourseIntelLogo className="h-7 w-auto" loading="lazy" />
+          <div className="mb-4 flex items-center gap-2.5">
+            <CourseIntelLogo variant="mark" className="h-9 w-9" loading="lazy" />
+            <span className="font-display text-lg font-semibold tracking-wide text-almond-cream-100">
+              CourseIntel
             </span>
           </div>
           <p className="max-w-xs text-almond-cream-500">

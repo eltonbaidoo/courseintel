@@ -6,7 +6,7 @@ import { glassPanelInteractive, sectionAnchor } from "../landing-ui";
 const QUOTES = [
   {
     quote:
-      "I was manually tracking my grade in a spreadsheet every week. CourseIntel replaced that entirely — and it tells me things I didn't even think to calculate.",
+      "I was manually tracking my grade in a spreadsheet every week. CourseIntel replaced that entirely, and it tells me things I didn't even think to calculate.",
     name: "Sarah K.",
     meta: "Junior, computer science · Georgia Tech",
     avatar: "S",

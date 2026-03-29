@@ -65,7 +65,7 @@ export interface BootstrapResponse {
   student_signal: StudentSignal;
 }
 
-/** Local aggregate stored in Zustand — combines bootstrap data + metadata */
+/** Local aggregate stored in Zustand; combines bootstrap data + metadata */
 export interface Course {
   id: string;
   university: string;

@@ -27,7 +27,7 @@ const FEATURES = [
   },
   {
     title: "Risk detection",
-    body: "Flags what could drag your grade and when — before the deadline window closes.",
+    body: "Flags what could drag your grade and when, before the deadline window closes.",
     icon: ShieldAlert,
     iconWrap: "bg-espresso-800/80 text-almond-cream-300",
   },

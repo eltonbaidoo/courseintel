@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, PlayCircle, TrendingUp } from "lucide-react";
 
@@ -9,10 +10,16 @@ import { cn } from "@/lib/utils";
 import { ScrollReveal } from "../ScrollReveal";
 import { glassPanelStatic } from "../landing-ui";
 
+const CSSBook3D = dynamic(
+  () => import("../3d/CSSBook3D").then((m) => ({ default: m.CSSBook3D })),
+  { ssr: false, loading: () => null }
+);
+
 export function LandingHero() {
   return (
     <section className="relative px-6 pb-16 pt-28 md:pb-24 md:pt-32">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
+      <CSSBook3D />
+      <div className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-2 lg:gap-16">
         <div className="text-center lg:text-left">
           <div className="relative mb-6 inline-flex">
             <span
@@ -34,7 +41,7 @@ export function LandingHero() {
 
           <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-almond-cream-500 lg:mx-0 lg:max-w-lg lg:text-xl">
             CourseIntel turns scattered syllabi, grades, and deadlines into a live course intelligence
-            system — so you always know where you stand and what to prioritize.
+            system, so you always know where you stand and what to prioritize.
           </p>
 
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
@@ -61,7 +68,7 @@ export function LandingHero() {
           </div>
         </div>
 
-        <ScrollReveal animate className="lg:justify-self-end">
+        <ScrollReveal animate className="lg:justify-self-center lg:-ml-16">
           <div className="relative mx-auto w-full max-w-lg pb-28 lg:mx-0 lg:max-w-none lg:pb-0">
             <div
               className="absolute -right-4 top-0 hidden h-40 w-[88%] rounded-2xl border border-almond-cream-50/8 bg-shadow-grey-900/40 backdrop-blur-sm lg:block"
@@ -96,7 +103,7 @@ export function LandingHero() {
                 Course profile
               </div>
               <div className="mb-6 pr-16 text-xl font-semibold text-almond-cream-200 md:text-2xl">
-                CS 301 — Data Structures
+                CS 301: Data Structures
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -141,14 +148,14 @@ export function LandingHero() {
                 <div className="flex items-center justify-between rounded-lg border border-espresso-800/45 bg-shadow-grey-900/50 p-2.5">
                   <div className="flex items-center gap-2.5">
                     <div className="h-2 w-2 shrink-0 rounded-full bg-espresso-700" />
-                    <span className="text-sm font-medium text-almond-cream-300">Midterm exam — Thursday</span>
+                    <span className="text-sm font-medium text-almond-cream-300">Midterm exam, Thursday</span>
                   </div>
                   <span className="font-mono text-xs font-medium text-burnt-peach-400">HIGH</span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-espresso-800/45 bg-shadow-grey-900/50 p-2.5">
                   <div className="flex items-center gap-2.5">
                     <div className="h-2 w-2 shrink-0 rounded-full bg-burnt-peach-400" />
-                    <span className="text-sm font-medium text-almond-cream-300">Lab 5 due — Wednesday</span>
+                    <span className="text-sm font-medium text-almond-cream-300">Lab 5 due, Wednesday</span>
                   </div>
                   <span className="font-mono text-xs text-almond-cream-500">MED</span>
                 </div>

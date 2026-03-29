@@ -23,7 +23,7 @@ export function NextStepsCard({
     {
       done: hasCourse,
       title: "Bootstrap a course",
-      desc: "Upload a syllabus or let agents search — identity, tools, and deadlines.",
+      desc: "Upload a syllabus or let agents search: identity, tools, and deadlines.",
       href: "/dashboard/course/new/setup",
       cta: "Add course",
     },

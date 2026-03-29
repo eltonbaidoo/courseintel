@@ -1,7 +1,7 @@
 /**
  * Background service worker.
  * Receives scrape trigger from popup, runs content script, POSTs to CourseIntel backend.
- * LLM calls are handled server-side (OpenAI) — transparent here.
+ * LLM calls are handled server-side (OpenAI); transparent here.
  *
  * API_URL is injected at build time via __API_URL__ replacement.
  * Default falls back to localhost for development.
@@ -29,7 +29,7 @@ async function handleScrape(courseId: string, authToken: string): Promise<unknow
       files: ["dist/content/scraper.js"],
     });
   } catch {
-    // Already injected — safe to ignore
+    // Already injected; safe to ignore
   }
 
   const scrapeResult = await chrome.tabs.sendMessage(tab.id, { type: "SCRAPE_PAGE" }).catch(() => null);

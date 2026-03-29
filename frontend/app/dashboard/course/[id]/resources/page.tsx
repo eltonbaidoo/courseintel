@@ -44,7 +44,7 @@ export default function ResourcesPage({ params }: { params: Promise<{ id: string
           Tip
         </p>
         If a tool is missing, re-run bootstrap with a clearer syllabus PDF or add the
-        professor name — Tool Discovery uses both text and course context.
+        professor name. Tool Discovery uses both text and course context.
       </div>
 
       {/* Detected Platforms */}
