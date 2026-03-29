@@ -1,45 +1,35 @@
 "use client";
 import { useEffect, useState } from "react";
 
-type Status = { active_provider: "anthropic" | "gemini" | "none"; anthropic: boolean; gemini: boolean; fallback_enabled: boolean } | null;
+type Status = { active_provider: "anthropic" | "openai" | "none"; anthropic: boolean; openai: boolean } | null;
 
-const PROVIDER_LABEL: Record<string, string> = {
-  anthropic: "Claude",
-  gemini: "Gemini (fallback)",
-  none: "No LLM",
-};
-
-const PROVIDER_COLOR: Record<string, string> = {
-  anthropic: "bg-violet-100 text-violet-700",
-  gemini: "bg-blue-100 text-blue-700",
-  none: "bg-red-100 text-red-600",
+const CONFIG: Record<string, { label: string; cls: string }> = {
+  anthropic: { label: "Claude",  cls: "bg-honeydew-900 text-honeydew-400 border border-honeydew-800" },
+  openai:    { label: "GPT-4o",  cls: "bg-honeydew-900 text-neon-ice-400 border border-honeydew-800" },
+  none:      { label: "No LLM",  cls: "bg-coral-900 text-coral-400 border border-coral-800" },
 };
 
 export default function LLMProviderBadge() {
   const [status, setStatus] = useState<Status>(null);
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-    fetch(`${apiUrl}/health/llm`)
+    const url = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+    fetch(`${url}/health/llm`, {
+      headers: { "X-Internal-Token": process.env.NEXT_PUBLIC_HEALTH_TOKEN ?? "" },
+    })
       .then((r) => r.json())
       .then(setStatus)
-      .catch(() => setStatus(null));
+      .catch(() => null);
   }, []);
 
   if (!status) return null;
 
-  const provider = status.active_provider;
+  const cfg = CONFIG[status.active_provider] ?? CONFIG.none;
 
   return (
-    <span
-      className={`text-xs font-medium px-2.5 py-1 rounded-full ${PROVIDER_COLOR[provider] ?? ""}`}
-      title={
-        provider === "gemini"
-          ? "Anthropic is unavailable — falling back to Gemini automatically."
-          : "Claude is active."
-      }
-    >
-      {PROVIDER_LABEL[provider]}
+    <span className={`badge text-xs ${cfg.cls}`} title={`Active LLM: ${status.active_provider}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+      {cfg.label}
     </span>
   );
 }

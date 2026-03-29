@@ -1,117 +1,53 @@
 """
 LLM gateway for CourseIntel agents.
+Supports Anthropic Claude (primary) and OpenAI (fallback).
 
-Call order:  Anthropic Claude  →  Google Gemini (fallback)
-
-Fallback is triggered on:
-  - Rate limit (429)
-  - Overload / server errors (5xx)
-  - Connection / timeout errors
-  - Any other APIError from Anthropic
-
-All agents call call_llm() — the provider switch is fully transparent to them.
+Model tiers:
+  OPUS   → claude-opus-4-6 / gpt-4o          (deep reasoning — Judgment, Syllabus Intelligence)
+  SONNET → claude-sonnet-4-6 / gpt-4o        (balanced — Reputation, Study Context)
+  HAIKU  → claude-haiku-4-5-20251001 / gpt-4o-mini  (fast — all other agents)
 """
-
 import logging
-import anthropic
-from google import genai
-from google.genai import types as genai_types
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Model constants — used by every agent
-# ---------------------------------------------------------------------------
+# ── Model constants ──────────────────────────────────────────────────────────
+# Agent code always references these; the gateway maps to the active provider.
 OPUS = "claude-opus-4-6"
 SONNET = "claude-sonnet-4-6"
-HAIKU = "claude-haiku-4-5"
+HAIKU = "claude-haiku-4-5-20251001"
 
-# Gemini equivalents, matched by capability tier
-_GEMINI_FALLBACK: dict[str, str] = {
-    OPUS: "gemini-2.5-pro",       # deepest reasoning ↔ deepest reasoning
-    SONNET: "gemini-2.0-flash",   # mid-tier synthesis ↔ mid-tier speed
-    HAIKU: "gemini-2.0-flash-lite",  # fast/cheap classification ↔ fast/cheap
+# OpenAI equivalents
+_CLAUDE_TO_OPENAI = {
+    OPUS: "gpt-4o",
+    SONNET: "gpt-4o",
+    HAIKU: "gpt-4o-mini",
 }
 
-# Anthropic errors that should trigger a fallback (not user errors)
-_FALLBACK_ON = (
-    anthropic.RateLimitError,
-    anthropic.APIStatusError,       # covers 5xx overload
-    anthropic.APIConnectionError,
-    anthropic.APITimeoutError,
-)
-
-# ---------------------------------------------------------------------------
-# Clients (lazy-initialised)
-# ---------------------------------------------------------------------------
-_anthropic_client: anthropic.Anthropic | None = None
-_gemini_client: genai.Client | None = None
+# ── Lazy-init clients ───────────────────────────────────────────────────────
+_anthropic_client = None
+_openai_client = None
 
 
-def _get_anthropic() -> anthropic.Anthropic:
+def _get_anthropic():
     global _anthropic_client
     if _anthropic_client is None:
-        _anthropic_client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        from anthropic import Anthropic
+        _anthropic_client = Anthropic(api_key=settings.anthropic_api_key)
     return _anthropic_client
 
 
-def _get_gemini() -> genai.Client | None:
-    global _gemini_client
-    if _gemini_client is None:
-        if not settings.google_api_key:
-            return None
-        _gemini_client = genai.Client(api_key=settings.google_api_key)
-    return _gemini_client
+def _get_openai():
+    global _openai_client
+    if _openai_client is None:
+        from openai import OpenAI
+        _openai_client = OpenAI(api_key=settings.openai_api_key)
+    return _openai_client
 
 
-# ---------------------------------------------------------------------------
-# Anthropic call
-# ---------------------------------------------------------------------------
-def _call_anthropic(system: str, user: str, model: str, max_tokens: int, thinking: bool) -> str:
-    client = _get_anthropic()
-    kwargs: dict = {
-        "model": model,
-        "max_tokens": max_tokens,
-        "system": system,
-        "messages": [{"role": "user", "content": user}],
-    }
-    if thinking and model in (OPUS, SONNET):
-        kwargs["thinking"] = {"type": "adaptive"}
+# ── Public API ───────────────────────────────────────────────────────────────
 
-    response = client.messages.create(**kwargs)
-    # Find first text block (skip thinking blocks if present)
-    for block in response.content:
-        if block.type == "text":
-            return block.text
-    return ""
-
-
-# ---------------------------------------------------------------------------
-# Gemini fallback call
-# ---------------------------------------------------------------------------
-def _call_gemini(system: str, user: str, model: str, max_tokens: int) -> str:
-    client = _get_gemini()
-    if client is None:
-        raise RuntimeError("Gemini fallback requested but GOOGLE_API_KEY is not set.")
-
-    gemini_model = _GEMINI_FALLBACK.get(model, "gemini-2.0-flash")
-    full_prompt = f"{system}\n\n{user}" if system else user
-
-    response = client.models.generate_content(
-        model=gemini_model,
-        contents=full_prompt,
-        config=genai_types.GenerateContentConfig(
-            max_output_tokens=max_tokens,
-            temperature=0.2,
-        ),
-    )
-    return response.text or ""
-
-
-# ---------------------------------------------------------------------------
-# Public interface — used by all agents
-# ---------------------------------------------------------------------------
 async def call_llm(
     system: str,
     user: str,
@@ -120,34 +56,78 @@ async def call_llm(
     thinking: bool = False,
 ) -> str:
     """
-    Call Anthropic Claude. On retriable errors, fall back to Gemini.
-    Returns the text response from whichever provider succeeded.
+    Route to the configured LLM provider.
+    `thinking=True` enables extended thinking on Anthropic Opus/Sonnet.
     """
-    # --- Primary: Anthropic ---
-    try:
-        text = _call_anthropic(system, user, model, max_tokens, thinking)
-        logger.debug("LLM response via Anthropic %s (%d chars)", model, len(text))
-        return text
-    except _FALLBACK_ON as exc:
-        if not settings.llm_fallback_enabled:
-            raise
-        logger.warning(
-            "Anthropic %s failed (%s: %s) — falling back to Gemini",
-            model, type(exc).__name__, exc,
+    provider = settings.llm_provider
+    if provider == "anthropic":
+        return await _call_anthropic(system, user, model, max_tokens, thinking)
+    elif provider == "openai":
+        return await _call_openai(system, user, model, max_tokens)
+    else:
+        raise RuntimeError(
+            "No LLM API key configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY in .env"
         )
 
-    # --- Fallback: Gemini ---
+
+async def _call_anthropic(
+    system: str, user: str, model: str, max_tokens: int, thinking: bool
+) -> str:
+    client = _get_anthropic()
+
+    kwargs: dict = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "system": system,
+        "messages": [{"role": "user", "content": user}],
+    }
+
+    if thinking:
+        kwargs["max_tokens"] = max(max_tokens, 16384)
+        kwargs["thinking"] = {
+            "type": "enabled",
+            "budget_tokens": min(10000, kwargs["max_tokens"] // 2),
+        }
+    else:
+        kwargs["temperature"] = 0.2
+
     try:
-        text = _call_gemini(system, user, model, max_tokens)
-        logger.info("LLM response via Gemini fallback (%d chars)", len(text))
+        response = client.messages.create(**kwargs)
+        text = ""
+        for block in response.content:
+            if block.type == "text":
+                text = block.text
+                break
+        logger.debug("Anthropic %s → %d chars", model, len(text))
         return text
-    except Exception as gemini_exc:
-        logger.error("Gemini fallback also failed: %s", gemini_exc)
-        raise RuntimeError(
-            f"Both Anthropic and Gemini failed. "
-            f"Last Gemini error: {gemini_exc}"
-        ) from gemini_exc
+    except Exception as exc:
+        logger.error("Anthropic call failed (%s): %s", model, exc)
+        raise
 
 
-# Backwards-compatible alias used by older agent code
+async def _call_openai(
+    system: str, user: str, model: str, max_tokens: int
+) -> str:
+    client = _get_openai()
+    openai_model = _CLAUDE_TO_OPENAI.get(model, model)
+
+    try:
+        response = client.chat.completions.create(
+            model=openai_model,
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            temperature=0.2,
+        )
+        text = response.choices[0].message.content or ""
+        logger.debug("OpenAI %s → %d chars", openai_model, len(text))
+        return text
+    except Exception as exc:
+        logger.error("OpenAI call failed (%s): %s", openai_model, exc)
+        raise
+
+
+# Backwards-compatible alias used by all agent modules
 call_claude = call_llm

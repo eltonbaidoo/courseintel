@@ -1,64 +1,271 @@
 "use client";
-import { useState } from "react";
 
-type GradeEntry = { title: string; category: string; earned: string; possible: string };
+import { use, useState } from "react";
+import { useCourse } from "@/hooks/use-course";
+import { useAppStore } from "@/stores/app-store";
+import { useComputeGrade } from "@/hooks/use-grades";
+import { EmptyState } from "@/components/ui/EmptyState";
+import type { GradeEntry } from "@/types/grades";
 
-export default function GradesPage({ params }: { params: { id: string } }) {
-  const [entries, setEntries] = useState<GradeEntry[]>([]);
-  const [form, setForm] = useState<GradeEntry>({ title: "", category: "", earned: "", possible: "" });
+function letterGrade(pct: number) {
+  if (pct >= 93) return "A";
+  if (pct >= 90) return "A-";
+  if (pct >= 87) return "B+";
+  if (pct >= 83) return "B";
+  if (pct >= 80) return "B-";
+  if (pct >= 77) return "C+";
+  if (pct >= 73) return "C";
+  if (pct >= 70) return "C-";
+  if (pct >= 60) return "D";
+  return "F";
+}
+
+function gradeColor(pct: number) {
+  if (pct >= 90) return "text-honeydew-600";
+  if (pct >= 80) return "text-gold-600";
+  if (pct >= 70) return "text-banana-700";
+  return "text-coral-600";
+}
+
+function barColor(pct: number) {
+  if (pct >= 90) return "bg-honeydew-500";
+  if (pct >= 80) return "bg-gold-500";
+  if (pct >= 70) return "bg-banana-500";
+  return "bg-coral-500";
+}
+
+export default function GradesPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const course = useCourse(id);
+  const entries = useAppStore((s) => s.gradeEntries[id] ?? []);
+  const addGradeEntry = useAppStore((s) => s.addGradeEntry);
+  const removeGradeEntry = useAppStore((s) => s.removeGradeEntry);
+
+  const categories = course?.bootstrap.course_profile?.grading_categories ?? [];
+  const categoryNames = categories.length > 0
+    ? categories.map((c) => c.name)
+    : ["Homework", "Exams", "Projects", "Quizzes", "Participation"];
+
+  const { data: computed } = useComputeGrade(id, categories);
+
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({
+    title: "",
+    category: categoryNames[0] ?? "Homework",
+    earned: "",
+    possible: "",
+  });
+
+  if (!course) {
+    return (
+      <EmptyState
+        icon="🔍"
+        title="Course not found"
+        description="This course doesn't exist."
+        action={{ label: "Back to courses", href: "/dashboard" }}
+      />
+    );
+  }
+
+  // Use API-computed grade if available, else local fallback
+  const totalEarned = entries.reduce((s, e) => s + e.scoreEarned, 0);
+  const totalPossible = entries.reduce((s, e) => s + e.scorePossible, 0);
+  const localPct = totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+  const pct = computed?.current_grade_pct ?? localPct;
+  const letter = computed?.letter_grade ?? letterGrade(localPct);
+
+  // Category breakdown
+  const categoryBreakdown = computed
+    ? Object.entries(computed.category_breakdown).map(([cat, avg]) => ({
+        cat,
+        pct: avg,
+      }))
+    : categoryNames
+        .map((cat) => {
+          const catEntries = entries.filter((e) => e.category === cat);
+          if (!catEntries.length) return null;
+          const e = catEntries.reduce((s, e) => s + e.scoreEarned, 0);
+          const p = catEntries.reduce((s, e) => s + e.scorePossible, 0);
+          return { cat, pct: p > 0 ? (e / p) * 100 : 0 };
+        })
+        .filter(Boolean) as { cat: string; pct: number }[];
 
   function addEntry() {
     if (!form.title || !form.earned || !form.possible) return;
-    setEntries((prev) => [...prev, form]);
-    setForm({ title: "", category: "", earned: "", possible: "" });
+    const entry: GradeEntry = {
+      id: crypto.randomUUID(),
+      courseId: id,
+      assignmentTitle: form.title,
+      category: form.category,
+      scoreEarned: parseFloat(form.earned),
+      scorePossible: parseFloat(form.possible),
+      source: "manual",
+    };
+    addGradeEntry(id, entry);
+    setForm({ title: "", category: categoryNames[0] ?? "Homework", earned: "", possible: "" });
+    setShowForm(false);
   }
 
-  const totalEarned = entries.reduce((s, e) => s + Number(e.earned), 0);
-  const totalPossible = entries.reduce((s, e) => s + Number(e.possible), 0);
-  const pct = totalPossible > 0 ? ((totalEarned / totalPossible) * 100).toFixed(1) : null;
-
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Grades Dashboard</h1>
+    <div className="space-y-6 stagger">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="section-label mb-1">Performance</p>
+          <h1 className="font-display text-3xl font-bold text-honeydew-950">
+            Grades
+          </h1>
+        </div>
+        <button onClick={() => setShowForm(true)} className="btn-secondary">
+          + Add Grade
+        </button>
+      </div>
 
-      {pct && (
-        <div className="border rounded-xl p-5 bg-white text-center">
-          <p className="text-4xl font-bold text-brand-600">{pct}%</p>
-          <p className="text-gray-500 text-sm mt-1">Current estimated grade ({totalEarned}/{totalPossible} pts)</p>
+      {/* Current grade hero */}
+      {entries.length > 0 ? (
+        <div className="card p-6 flex items-center gap-8">
+          <div className="text-center shrink-0">
+            <p className={`font-mono text-6xl font-bold ${gradeColor(pct)}`}>
+              {pct.toFixed(1)}
+              <span className="text-2xl text-honeydew-400">%</span>
+            </p>
+            <p
+              className={`font-display text-2xl font-bold mt-1 ${gradeColor(pct)}`}
+            >
+              {letter}
+            </p>
+            <p className="text-xs text-honeydew-400 mt-1">
+              {totalEarned}/{totalPossible} pts
+            </p>
+            {computed?.weight_graded != null && (
+              <p className="text-xs text-honeydew-400">
+                {computed.weight_graded}% of grade assessed
+              </p>
+            )}
+          </div>
+          <div className="flex-1 space-y-3">
+            <p className="section-label">By Category</p>
+            {categoryBreakdown.map(({ cat, pct }) => (
+              <div key={cat}>
+                <div className="flex justify-between text-xs text-honeydew-600 mb-1">
+                  <span>{cat}</span>
+                  <span className="font-mono font-semibold">{pct.toFixed(0)}%</span>
+                </div>
+                <div className="h-1.5 bg-honeydew-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${barColor(pct)} transition-all`}
+                    style={{ width: `${Math.min(pct, 100)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <EmptyState
+          icon="📊"
+          title="No grades yet"
+          description="Add your first grade to see your standing."
+        />
+      )}
+
+      {/* Add form */}
+      {showForm && (
+        <div className="card p-5 border-honeydew-300 animate-fade-up">
+          <p className="section-label mb-3">New Entry</p>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <input
+              className="input col-span-2"
+              placeholder="Assignment title"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+            />
+            <select
+              className="input"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+            >
+              {categoryNames.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+            <div className="flex gap-2">
+              <input
+                className="input"
+                type="number"
+                placeholder="Earned"
+                value={form.earned}
+                onChange={(e) => setForm({ ...form, earned: e.target.value })}
+              />
+              <input
+                className="input"
+                type="number"
+                placeholder="/ Total"
+                value={form.possible}
+                onChange={(e) =>
+                  setForm({ ...form, possible: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={addEntry} className="btn-primary">
+              Save
+            </button>
+            <button onClick={() => setShowForm(false)} className="btn-ghost">
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="border rounded-xl p-5 bg-white space-y-3">
-        <h2 className="font-semibold">Add Grade Entry</h2>
-        <div className="grid grid-cols-2 gap-2">
-          <input className="border rounded px-2 py-1.5 text-sm col-span-2" placeholder="Assignment title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <input className="border rounded px-2 py-1.5 text-sm" placeholder="Category (e.g. Homework)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
-          <div className="flex gap-2">
-            <input className="border rounded px-2 py-1.5 text-sm w-1/2" placeholder="Earned" value={form.earned} onChange={(e) => setForm({ ...form, earned: e.target.value })} />
-            <input className="border rounded px-2 py-1.5 text-sm w-1/2" placeholder="Possible" value={form.possible} onChange={(e) => setForm({ ...form, possible: e.target.value })} />
-          </div>
-        </div>
-        <button onClick={addEntry} className="px-4 py-2 bg-brand-500 text-white rounded-lg text-sm">Add Entry</button>
-      </div>
-
+      {/* Entries table */}
       {entries.length > 0 && (
-        <div className="border rounded-xl bg-white overflow-hidden">
+        <div className="card overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
-              <tr>
-                <th className="px-4 py-2 text-left">Assignment</th>
-                <th className="px-4 py-2 text-left">Category</th>
-                <th className="px-4 py-2 text-right">Score</th>
+            <thead>
+              <tr className="bg-honeydew-50 border-b border-honeydew-100">
+                <th className="px-5 py-3 text-left section-label">Assignment</th>
+                <th className="px-5 py-3 text-left section-label">Category</th>
+                <th className="px-5 py-3 text-right section-label">Score</th>
+                <th className="px-5 py-3 text-right section-label">%</th>
+                <th className="px-5 py-3 w-8"></th>
               </tr>
             </thead>
             <tbody>
-              {entries.map((e, i) => (
-                <tr key={i} className="border-t">
-                  <td className="px-4 py-2">{e.title}</td>
-                  <td className="px-4 py-2 text-gray-500">{e.category}</td>
-                  <td className="px-4 py-2 text-right">{e.earned}/{e.possible}</td>
-                </tr>
-              ))}
+              {entries.map((e) => {
+                const p =
+                  e.scorePossible > 0
+                    ? (e.scoreEarned / e.scorePossible) * 100
+                    : 0;
+                return (
+                  <tr
+                    key={e.id}
+                    className="border-t border-honeydew-50 hover:bg-honeydew-50 transition-colors"
+                  >
+                    <td className="px-5 py-3 font-medium text-honeydew-900">
+                      {e.assignmentTitle}
+                    </td>
+                    <td className="px-5 py-3 text-honeydew-500">{e.category}</td>
+                    <td className="px-5 py-3 text-right font-mono text-honeydew-700">
+                      {e.scoreEarned}/{e.scorePossible}
+                    </td>
+                    <td
+                      className={`px-5 py-3 text-right font-mono font-semibold ${gradeColor(p)}`}
+                    >
+                      {p.toFixed(0)}%
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <button
+                        onClick={() => removeGradeEntry(id, e.id)}
+                        className="text-honeydew-300 hover:text-coral-500 text-xs transition-colors"
+                        title="Delete"
+                      >
+                        x
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
