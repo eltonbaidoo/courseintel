@@ -20,7 +20,10 @@ bootstrap_course()  ← FastAPI route handler
     │       ReputationAgent,
     │       ToolDiscoveryAgent
     │   )
-    └─ [4] DB persist → return bootstrap_data
+    ├─ [4] ObligationDeadlineAgent            (sequential: normalizes raw key_deadlines
+    │                                          from SyllabusIntelligence into urgency-
+    │                                          ranked obligations with conflict notes)
+    └─ [5] DB persist → return bootstrap_data
 
 get_action_plan()  ← GET /courses/{id}/action-plan
     │
