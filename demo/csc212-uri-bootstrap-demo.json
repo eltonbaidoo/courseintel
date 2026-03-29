@@ -1,0 +1,165 @@
+{
+  "id": "demo-csc212-uri-spring2025",
+  "course_identity": {
+    "canonical_name": "Data Structures",
+    "course_code": "CSC 212",
+    "university": "University of Rhode Island",
+    "official_links": [
+      "https://web.uri.edu/cs/",
+      "https://www.uri.edu/catalog/"
+    ],
+    "confidence": 0.94,
+    "notes": "Matched CSC 212 (Data Structures) Spring 2025 offering; instructor Marco Alvarez. Syllabus uploaded PDF used as ground truth."
+  },
+  "syllabus_status": {
+    "found": true,
+    "confidence": 1.0,
+    "source": "upload"
+  },
+  "course_profile": {
+    "grading_categories": [
+      {
+        "name": "Homework",
+        "weight": 0.35,
+        "notes": "Individual unless stated; autograded via Gradescope; new assignment roughly every 6–9 days."
+      },
+      {
+        "name": "Exams",
+        "weight": 0.65,
+        "notes": "Three exams: Midterm 1, Midterm 2, Final. Open-book (printed/handwritten notes only); no electronic devices."
+      },
+      {
+        "name": "Participation / Labs",
+        "weight": 0.0,
+        "notes": "Weekly lab attendance required for participation credit; syllabus lists 5–10% extra credit tied to participation (not part of the 35/65 split above)."
+      }
+    ],
+    "late_policy": "No late submissions accepted for assignments.",
+    "attendance_policy": "Lab sessions are structured (lecture segments, live coding, exercises); attendance expected per syllabus.",
+    "drop_rules": "Follow URI academic calendar and department policies for drops/withdrawals.",
+    "required_tools": [
+      "Ed Discussion",
+      "Gradescope",
+      "Zoom",
+      "C++ development environment (course-specific toolchain per instructor)"
+    ],
+    "key_deadlines": [
+      { "title": "Homework 1", "date": "2025-02-07", "type": "assignment" },
+      { "title": "Homework 2", "date": "2025-02-18", "type": "assignment" },
+      { "title": "Homework 3", "date": "2025-03-01", "type": "assignment" },
+      { "title": "Midterm 1", "date": "2025-03-06", "type": "exam" },
+      { "title": "Homework 4", "date": "2025-03-20", "type": "assignment" },
+      { "title": "Homework 5", "date": "2025-04-03", "type": "assignment" },
+      { "title": "Midterm 2", "date": "2025-04-10", "type": "exam" },
+      { "title": "Homework 6", "date": "2025-04-24", "type": "assignment" },
+      { "title": "Final Exam", "date": "2025-05-08", "type": "exam" }
+    ],
+    "course_summary": "CSC 212 covers fundamental data structures and algorithms—lists, stacks, queues, trees, graphs, and hash tables—with implementation emphasis in C++ and analysis using asymptotic notation.",
+    "workflow_notes": "Lectures TR 9:30–10:45 AM; multiple Wednesday lab sections. Prerequisites: CSC 211 (C- or better) and MTH 180 or Computer Engineering major status. Office hours location noted as Tyler Hall CS lounge (schedule TBD). Academic integrity policy prohibits uncredited AI use; AI is allowed if cited and you understand all submitted work. Support: AEC; disability accommodations via DAI; religious observances require advance written notice."
+  },
+  "resources": [
+    {
+      "title": "URI Computer Science — department hub",
+      "url": "https://web.uri.edu/cs/",
+      "type": "other",
+      "relevance_score": 0.92,
+      "reason": "Official CS department page for policies, labs, and advising context."
+    },
+    {
+      "title": "VisuAlgo — data structures visualizations",
+      "url": "https://visualgo.net/",
+      "type": "notes",
+      "relevance_score": 0.88,
+      "reason": "Interactive visualizations for trees, graphs, heaps, and sorting—pairs well with CSC 212 topics."
+    },
+    {
+      "title": "GeeksforGeeks — Data Structures",
+      "url": "https://www.geeksforgeeks.org/data-structures/",
+      "type": "notes",
+      "relevance_score": 0.75,
+      "reason": "Quick reference for implementations and interview-style explanations."
+    },
+    {
+      "title": "OpenDSA — interactive textbook modules",
+      "url": "https://opendsa-server.cs.vt.edu/",
+      "type": "assignments",
+      "relevance_score": 0.7,
+      "reason": "Supplemental practice aligned with undergraduate DS curricula."
+    }
+  ],
+  "detected_tools": [
+    {
+      "tool_name": "Ed Discussion",
+      "evidence": "Listed in syllabus as platform for discussion, polls, quizzes, and collaboration.",
+      "purpose": "Course Q&A and lightweight assessments",
+      "confidence": 0.95,
+      "integration_type": "manual"
+    },
+    {
+      "tool_name": "Gradescope",
+      "evidence": "Syllabus specifies assignment submission and autograding through Gradescope.",
+      "purpose": "Homework submission and grading",
+      "confidence": 0.96,
+      "integration_type": "manual"
+    },
+    {
+      "tool_name": "Zoom",
+      "evidence": "Syllabus references virtual meetings and support sessions.",
+      "purpose": "Virtual office hours or support",
+      "confidence": 0.85,
+      "integration_type": "manual"
+    }
+  ],
+  "student_signal": {
+    "workload": "Moderate to high — steady coding assignments on a 6–9 day cadence plus three exams.",
+    "difficulty": "Typical second-year CS data structures pace; pointer-heavy and proof-style analysis on exams.",
+    "grading_style": "Strict no-late policy on homework; majority of grade from exams (65%).",
+    "key_warnings": [
+      "No late submissions accepted",
+      "Exams prohibit electronic devices; open notes only if printed/handwritten",
+      "Academic integrity explicitly calls out uncredited AI use"
+    ],
+    "positive_signals": [
+      "Transparent grading scale on syllabus",
+      "Multiple lab section times on Wednesdays",
+      "AI use permitted with citation and understanding requirement",
+      "Clear support pathways (AEC, DAI, religious observance process)"
+    ],
+    "summary": "Structured, exam-weighted course with firm deadlines. Strong fit if you keep up weekly and budget time for open-book exam prep without relying on devices.",
+    "confidence": 0.82
+  },
+  "obligations": [
+    {
+      "title": "Homework 1",
+      "due_date": "2025-02-07T23:59:00",
+      "source": "syllabus",
+      "type": "assignment",
+      "urgency": "high",
+      "conflict_note": null
+    },
+    {
+      "title": "Midterm 1",
+      "due_date": "2025-03-06T09:30:00",
+      "source": "syllabus",
+      "type": "exam",
+      "urgency": "high",
+      "conflict_note": null
+    },
+    {
+      "title": "Midterm 2",
+      "due_date": "2025-04-10T09:30:00",
+      "source": "syllabus",
+      "type": "exam",
+      "urgency": "medium",
+      "conflict_note": null
+    },
+    {
+      "title": "Final Exam",
+      "due_date": "2025-05-08T15:00:00",
+      "source": "syllabus",
+      "type": "exam",
+      "urgency": "medium",
+      "conflict_note": "Confirm exact slot with URI final exam schedule."
+    }
+  ]
+}

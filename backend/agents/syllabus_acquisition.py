@@ -20,7 +20,10 @@ Return only valid JSON.
 
 async def run(course: str, university: str, professor: str = "") -> dict:
     results = await search_for_syllabus(course, university, professor)
-    context = "\n".join(f"- {r['title']}: {r['url']}\n  {r.get('content', '')[:200]}" for r in results)
+    context = "\n".join(
+        f"- {r.get('title', '')}: {r.get('url', '')}\n  {str(r.get('content', ''))[:200]}"
+        for r in results
+    )
 
     prompt = f"""
 Course: {course}

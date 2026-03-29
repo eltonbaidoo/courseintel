@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useBootstrap } from "@/hooks/use-course";
+import { useBootstrap, useDemoCourse } from "@/hooks/use-course";
 import { useToast } from "@/components/ui/ToastProvider";
 import type { BootstrapResponse } from "@/types/course";
 
@@ -156,6 +156,7 @@ function useAgentHealth(): AgentHealth {
 export default function CourseSetupPage() {
   const router = useRouter();
   const { bootstrap } = useBootstrap();
+  const { loadDemoCourse } = useDemoCourse();
   const { toast } = useToast();
   const agentHealth = useAgentHealth();
 
@@ -245,6 +246,37 @@ export default function CourseSetupPage() {
     }
   }
 
+  async function handleLoadDemo() {
+    setRunning(true);
+    setIdle(false);
+    setSteps(INITIAL_STEPS.map((s) => ({ ...s, status: "waiting" as const, detail: undefined })));
+    try {
+      const demoCourse = await loadDemoCourse();
+      const details = buildDetails(demoCourse.bootstrap);
+      setSteps((prev) =>
+        prev.map((s, i) => ({
+          ...s,
+          status: "done" as const,
+          detail: details[i],
+        })),
+      );
+      toast({
+        title: "Demo course loaded",
+        description: "Using bundled CSC 212 data — no API calls.",
+        variant: "success",
+      });
+      router.push(`/dashboard/course/${demoCourse.id}`);
+    } catch (err) {
+      toast({
+        title: "Could not load demo",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "error",
+      });
+    } finally {
+      setRunning(false);
+    }
+  }
+
   const parallelIndices = INITIAL_STEPS.map((s, i) => (s.parallel ? i : -1)).filter((i) => i >= 0);
   const parallelStart = Math.min(...parallelIndices);
 
@@ -259,16 +291,34 @@ export default function CourseSetupPage() {
           Enter your course details. CourseIntel runs an 8-agent pipeline to
           build your intelligence model.
         </p>
+        <div className="mt-4 rounded-xl border border-espresso-800 bg-espresso-950/80 px-4 py-3 text-sm text-espresso-700">
+          <p className="text-espresso-600 font-medium mb-2">Hackathon / offline demo</p>
+          <p className="text-xs text-espresso-700 mb-3">
+            The JSON under <code className="text-[11px] bg-espresso-900 px-1 rounded">demo/</code> is not loaded
+            automatically. Use the button below to drop bundled URI · CSC 212 · Marco Alvarez data into your
+            dashboard without LLM keys or a running backend.
+          </p>
+          <button
+            type="button"
+            disabled={running}
+            onClick={handleLoadDemo}
+            className="text-sm font-semibold rounded-lg px-3 py-2 bg-almond-cream-200 text-espresso-950 hover:bg-almond-cream-100 disabled:opacity-50 transition-colors"
+          >
+            Load demo course (CSC 212 — URI)
+          </button>
+        </div>
       </div>
 
       {/* Agent health banner */}
       {agentHealth === "unconfigured" && (
         <div className="mb-6 rounded-xl border border-espresso-800 bg-espresso-950 px-4 py-3 text-sm text-espresso-700">
           <span className="font-semibold text-espresso-600">Agents offline — no LLM key set.</span>{" "}
-          Add <code className="text-xs bg-espresso-900 px-1 py-0.5 rounded">OPENAI_API_KEY</code> or{" "}
-          <code className="text-xs bg-espresso-900 px-1 py-0.5 rounded">GROQ_API_KEY</code> (free) to{" "}
+          Add <code className="text-xs bg-espresso-900 px-1 py-0.5 rounded">OPENAI_API_KEY</code>,{" "}
+          <code className="text-xs bg-espresso-900 px-1 py-0.5 rounded">GEMINI_API_KEY</code>, or{" "}
+          <code className="text-xs bg-espresso-900 px-1 py-0.5 rounded">GROQ_API_KEY</code> to{" "}
           <code className="text-xs bg-espresso-900 px-1 py-0.5 rounded">backend/.env</code>.
-          Bootstrap will save partial data only.
+          Bootstrap will save partial data only. Or use{" "}
+          <span className="font-semibold text-espresso-600">Load demo course</span> above — no keys required.
         </div>
       )}
       {agentHealth === "offline" && (
@@ -298,6 +348,7 @@ export default function CourseSetupPage() {
               disabled={running}
               className="input"
               placeholder="e.g. Georgia Tech"
+              suppressHydrationWarning
             />
           </div>
           <div>
@@ -310,6 +361,7 @@ export default function CourseSetupPage() {
               disabled={running}
               className="input"
               placeholder="e.g. CS 4400"
+              suppressHydrationWarning
             />
           </div>
           <div>
@@ -321,6 +373,7 @@ export default function CourseSetupPage() {
               disabled={running}
               className="input"
               placeholder="e.g. Dr. Miller (optional)"
+              suppressHydrationWarning
             />
           </div>
           <div>
@@ -333,6 +386,7 @@ export default function CourseSetupPage() {
               accept=".pdf"
               disabled={running}
               className="text-sm text-espresso-800 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-almond-cream-100 file:text-espresso-900 hover:file:bg-almond-cream-200 transition-all"
+              suppressHydrationWarning
             />
             <p className="text-xs text-almond-cream-400 mt-1">
               PDF only · max 10 MB · optional, we&apos;ll try to find it

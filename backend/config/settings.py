@@ -1,11 +1,15 @@
-from pydantic_settings import BaseSettings
 from typing import Optional
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # LLM provider — set ONE of these (OpenAI takes precedence if both are set)
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # LLM provider — priority: OpenAI → Gemini → Groq (first key that is set wins)
     # OpenAI: https://platform.openai.com/api-keys
     openai_api_key: Optional[str] = None
+    # Google Gemini (free tier): https://aistudio.google.com/apikey — env: GEMINI_API_KEY
+    gemini_api_key: Optional[str] = None
     # Groq (free tier, OpenAI-compatible): https://console.groq.com/keys
     groq_api_key: Optional[str] = None
 
@@ -41,12 +45,10 @@ class Settings(BaseSettings):
     def llm_provider(self) -> str:
         if self.openai_api_key:
             return "openai"
+        if self.gemini_api_key:
+            return "gemini"
         if self.groq_api_key:
             return "groq"
         return "none"
-
-    class Config:
-        env_file = ".env"
-
 
 settings = Settings()

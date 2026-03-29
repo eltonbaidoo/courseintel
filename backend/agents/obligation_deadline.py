@@ -3,8 +3,12 @@ Obligation & Deadline Agent
 Normalizes, deduplicates, and ranks all obligations from all sources.
 """
 import json
+import logging
 from typing import TypedDict
+
 from agents.base import call_llm as call_claude, HAIKU
+
+logger = logging.getLogger(__name__)
 
 
 class _ObligationItem(TypedDict):
@@ -31,10 +35,29 @@ Return only valid JSON.
 """
 
 
+def _coerce_result(parsed: object, fallback: list[dict]) -> ObligationResult:
+    if isinstance(parsed, dict):
+        obs = parsed.get("obligations")
+        if isinstance(obs, list):
+            return {"obligations": obs}
+    return {"obligations": fallback}
+
+
 async def run(obligations: list[dict]) -> ObligationResult:
+    if not obligations:
+        return {"obligations": []}
+
     prompt = f"Obligations from all sources:\n{json.dumps(obligations, indent=2)}"
-    raw = await call_claude(SYSTEM, prompt, model=HAIKU, max_tokens=4096)
     try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
+        raw = await call_claude(SYSTEM, prompt, model=HAIKU, max_tokens=4096)
+    except Exception as exc:
+        logger.warning("Obligation normalization LLM call failed: %s", exc)
         return {"obligations": obligations}
+
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.warning("Obligation normalization returned non-JSON; using raw deadlines")
+        return {"obligations": obligations}
+
+    return _coerce_result(parsed, obligations)

@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 
 type LLMStatus = {
-  active_provider: "openai" | "groq" | "none";
+  active_provider: "openai" | "gemini" | "groq" | "none";
   openai: boolean;
+  gemini: boolean;
   groq: boolean;
 } | null;
 
@@ -16,6 +17,10 @@ type AgentStatus = {
 const PROVIDER_CONFIG: Record<string, { label: string; cls: string }> = {
   openai: {
     label: "OpenAI",
+    cls: "bg-shadow-grey-900 text-burnt-peach-400 border border-espresso-950",
+  },
+  gemini: {
+    label: "Gemini",
     cls: "bg-shadow-grey-900 text-burnt-peach-400 border border-espresso-950",
   },
   groq: {

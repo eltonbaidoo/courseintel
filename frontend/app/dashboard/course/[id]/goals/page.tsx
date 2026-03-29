@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { useCourse } from "@/hooks/use-course";
 import { useGoalSimulator, useComputeGrade } from "@/hooks/use-grades";
-import { useAppStore } from "@/stores/app-store";
+import { EMPTY_GRADE_ENTRIES, useAppStore } from "@/stores/app-store";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 const TARGETS: Record<string, number> = {
@@ -22,7 +22,8 @@ export default function GoalSimulatorPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const course = useCourse(id);
   const categories = course?.bootstrap.course_profile?.grading_categories ?? [];
-  const entries = useAppStore((s) => s.gradeEntries[id] ?? []);
+  const entriesRaw = useAppStore((s) => s.gradeEntries[id]);
+  const entries = entriesRaw ?? EMPTY_GRADE_ENTRIES;
 
   const { data: computed } = useComputeGrade(id, categories);
 

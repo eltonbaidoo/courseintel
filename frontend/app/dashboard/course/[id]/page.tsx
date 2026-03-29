@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { use } from "react";
 import { useCourse } from "@/hooks/use-course";
-import { useAppStore } from "@/stores/app-store";
+import { EMPTY_GRADE_ENTRIES, useAppStore } from "@/stores/app-store";
 import { GradeBar } from "@/components/ui/GradeBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -24,7 +24,8 @@ const QUICK_LINKS = [
 export default function CourseProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const course = useCourse(id);
-  const entries = useAppStore((s) => s.gradeEntries[id] ?? []);
+  const entriesRaw = useAppStore((s) => s.gradeEntries[id]);
+  const entries = entriesRaw ?? EMPTY_GRADE_ENTRIES;
 
   if (!course) {
     return (
@@ -40,6 +41,8 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
   const { bootstrap } = course;
   const { course_profile: profile, student_signal: signal, syllabus_status } = bootstrap;
   const categories = profile?.grading_categories ?? [];
+  const keyWarnings = signal?.key_warnings ?? [];
+  const positiveSignals = signal?.positive_signals ?? [];
 
   // Quick local grade computation
   let gradePct: number | null = null;
@@ -195,7 +198,10 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
       )}
 
       {/* Student signal */}
-      {signal && (signal.key_warnings.length > 0 || signal.positive_signals.length > 0 || signal.workload) && (
+      {signal &&
+        (keyWarnings.length > 0 ||
+          positiveSignals.length > 0 ||
+          signal.workload) && (
         <div className="card p-5">
           <p className="section-label mb-3">Student Signal</p>
           <div className="flex flex-wrap gap-3 mb-3">
@@ -217,7 +223,7 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {signal.key_warnings.map((w) => (
+            {keyWarnings.map((w) => (
               <div
                 key={w}
                 className="flex items-start gap-2 text-xs text-espresso-800 bg-espresso-50 rounded-lg px-3 py-2"
@@ -225,7 +231,7 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
                 <span className="text-espresso-800 mt-0.5">!</span> {w}
               </div>
             ))}
-            {signal.positive_signals.map((p) => (
+            {positiveSignals.map((p) => (
               <div
                 key={p}
                 className="flex items-start gap-2 text-xs text-espresso-900 bg-almond-cream-50 rounded-lg px-3 py-2"

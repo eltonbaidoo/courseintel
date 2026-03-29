@@ -31,6 +31,7 @@ async def llm_status(x_internal_token: str | None = Header(default=None)):
     provider = settings.llm_provider
     openai_ok = False
     groq_ok = False
+    gemini_ok = False
 
     if settings.openai_api_key:
         try:
@@ -39,6 +40,17 @@ async def llm_status(x_internal_token: str | None = Header(default=None)):
             openai_ok = True
         except Exception:
             openai_ok = False
+
+    if settings.gemini_api_key:
+        try:
+            import google.generativeai as genai
+
+            genai.configure(api_key=settings.gemini_api_key)
+            # Light check: SDK can list models without a completion
+            next(genai.list_models(), None)
+            gemini_ok = True
+        except Exception:
+            gemini_ok = False
 
     if settings.groq_api_key:
         try:
@@ -51,11 +63,13 @@ async def llm_status(x_internal_token: str | None = Header(default=None)):
         except Exception:
             groq_ok = False
 
-    active = provider if (openai_ok or groq_ok) else "none"
+    _reach = {"openai": openai_ok, "gemini": gemini_ok, "groq": groq_ok}
+    active = provider if _reach.get(provider, False) else "none"
 
     return {
         "active_provider": active,
         "openai": openai_ok,
+        "gemini": gemini_ok,
         "groq": groq_ok,
     }
 
@@ -74,7 +88,7 @@ async def agents_ping(x_internal_token: str | None = Header(default=None)):
         return {
             "agents_online": False,
             "provider": "none",
-            "error": "No LLM key configured. Set OPENAI_API_KEY or GROQ_API_KEY in backend/.env",
+            "error": "No LLM key configured. Set OPENAI_API_KEY, GEMINI_API_KEY, or GROQ_API_KEY in backend/.env",
         }
 
     try:

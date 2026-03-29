@@ -3,6 +3,9 @@ import { persist } from "zustand/middleware";
 import type { Course } from "@/types/course";
 import type { GradeEntry } from "@/types/grades";
 
+/** Stable empty list for selectors — do not use inline `?? []` in useAppStore (breaks getSnapshot). */
+export const EMPTY_GRADE_ENTRIES: GradeEntry[] = [];
+
 interface User {
   id: string;
   email: string;
@@ -49,7 +52,8 @@ export const useAppStore = create<AppState>()(
 
       /* ── Grade Entries ── */
       gradeEntries: {},
-      getGradeEntries: (courseId) => get().gradeEntries[courseId] ?? [],
+      getGradeEntries: (courseId) =>
+        get().gradeEntries[courseId] ?? EMPTY_GRADE_ENTRIES,
       addGradeEntry: (courseId, entry) =>
         set((s) => ({
           gradeEntries: {

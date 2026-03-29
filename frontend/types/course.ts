@@ -33,10 +33,11 @@ export interface StudentSignal {
   workload?: string | null;
   difficulty?: string | null;
   grading_style?: string | null;
-  key_warnings: string[];
-  positive_signals: string[];
-  summary: string;
-  confidence: number;
+  /** Present when reputation agent returns full JSON; may be missing on partial API data */
+  key_warnings?: string[];
+  positive_signals?: string[];
+  summary?: string;
+  confidence?: number;
 }
 
 export interface SyllabusStatus {
