@@ -469,3 +469,69 @@ def test_reap_stale_jobs():
         assert updated["status"] == "timed_out"
 
     asyncio.get_event_loop().run_until_complete(_run())
+
+
+# ── SSE streaming bootstrap ──────────────────────────────────────────────────
+
+def test_bootstrap_stream_returns_event_stream():
+    """POST /courses/bootstrap/stream returns text/event-stream content-type."""
+    MOCKED_PIPELINE_EVENTS = [
+        {"type": "heartbeat"},
+        {"step": 0, "stage": "syllabus_acquisition", "status": "complete", "detail": "Found via web"},
+        {"step": 1, "stage": "syllabus_intelligence", "status": "complete", "detail": "3 categories"},
+        {"step": 2, "stage": "course_discovery", "status": "complete", "detail": "CS 301"},
+        {"step": 3, "stage": "resource_discovery", "status": "complete", "detail": "5 resources found"},
+        {"step": 4, "stage": "reputation_analysis", "status": "complete", "detail": "~12h/week"},
+        {"step": 5, "stage": "tool_detection", "status": "complete", "detail": "Gradescope"},
+        {"step": 6, "stage": "obligation_normalization", "status": "complete", "detail": "4 obligations ranked"},
+        {"step": 7, "stage": "persist", "status": "complete", "detail": "Course saved"},
+        {"type": "result", "data": {"id": "course-123", "course_profile": {}, "resources": []}},
+    ]
+
+    import json as _json
+
+    async def _fake_stream(*args, **kwargs):
+        for event in MOCKED_PIPELINE_EVENTS:
+            yield f"data: {_json.dumps(event)}\n\n"
+
+    with patch("api.routes.courses._stream_pipeline_events", side_effect=_fake_stream):
+        res = client.post(
+            "/courses/bootstrap/stream",
+            headers=AUTH,
+            data={"university": "URI", "course": "CSC 212", "professor": "Alvarez"},
+        )
+
+    assert res.status_code == 200
+    assert "text/event-stream" in res.headers.get("content-type", "")
+
+
+def test_bootstrap_stream_emits_stage_events():
+    """SSE stream contains running and complete events for each pipeline stage."""
+    import json as _json
+
+    STAGE_NAMES = [
+        "syllabus_acquisition", "syllabus_intelligence", "course_discovery",
+        "resource_discovery", "reputation_analysis", "tool_detection",
+        "obligation_normalization", "persist",
+    ]
+
+    async def _fake_stream(*args, **kwargs):
+        yield f"data: {_json.dumps({'type': 'heartbeat'})}\n\n"
+        for i, stage in enumerate(STAGE_NAMES):
+            yield f"data: {_json.dumps({'step': i, 'stage': stage, 'status': 'running'})}\n\n"
+            yield f"data: {_json.dumps({'step': i, 'stage': stage, 'status': 'complete', 'detail': 'ok'})}\n\n"
+        yield f"data: {_json.dumps({'type': 'result', 'data': {'id': 'c-999', 'course_profile': {}, 'resources': []}})}\n\n"
+
+    with patch("api.routes.courses._stream_pipeline_events", side_effect=_fake_stream):
+        res = client.post(
+            "/courses/bootstrap/stream",
+            headers=AUTH,
+            data={"university": "MIT", "course": "6.006"},
+        )
+
+    assert res.status_code == 200
+    body = res.text
+    # Verify all 8 stages and the final result appear in the stream
+    for stage in STAGE_NAMES:
+        assert stage in body, f"Stage {stage!r} not found in SSE stream"
+    assert '"type": "result"' in body or '"type":"result"' in body

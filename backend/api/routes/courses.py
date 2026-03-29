@@ -1,6 +1,9 @@
 import asyncio
+import json
 import logging
+from collections.abc import AsyncGenerator
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi.responses import StreamingResponse
 from api.deps import get_user_id
 from agents import (
     discovery,
@@ -141,6 +144,214 @@ async def _run_pipeline(
 
     logger.info("Bootstrap complete for user %s | course: %s @ %s", user_id, course, university)
     return bootstrap_data
+
+
+# ── SSE streaming pipeline ───────────────────────────────────────────────────
+
+def _sse(payload: dict) -> str:
+    """Format a dict as a single SSE data line."""
+    return f"data: {json.dumps(payload)}\n\n"
+
+
+async def _stream_pipeline_events(
+    user_id: str,
+    university: str,
+    course: str,
+    professor: str,
+    pdf_bytes: bytes | None,
+) -> AsyncGenerator[str, None]:
+    """
+    Async generator that yields SSE events as each pipeline stage completes.
+
+    Event schema: {"step": int, "stage": str, "status": "running"|"complete"|"error", "detail": str}
+
+    Stage order mirrors _run_pipeline:
+      0  syllabus_acquisition   — sequential
+      1  syllabus_intelligence  — sequential
+      2  course_discovery       — parallel
+      3  resource_discovery     — parallel
+      4  reputation_analysis    — parallel
+      5  tool_detection         — parallel
+      6  obligation_normalization — sequential
+      7  persist                — save + final result
+    """
+    # heartbeat so client knows the connection is alive before first stage
+    yield _sse({"type": "heartbeat"})
+
+    # ── Stage 0: Syllabus Acquisition ────────────────────────────────────────
+    yield _sse({"step": 0, "stage": "syllabus_acquisition", "status": "running"})
+    syllabus_text: str | None = None
+    syllabus_result: dict = {}
+
+    try:
+        if pdf_bytes:
+            syllabus_text = await extract_text_from_pdf_bytes(pdf_bytes)
+            syllabus_result = {"found": True, "confidence": 1.0, "source": "upload"}
+            detail = "Uploaded PDF · confidence 100%"
+        else:
+            syllabus_result = await syllabus_acquisition.run(course, university, professor)
+            syllabus_text = syllabus_result.get("syllabus_text")
+            if syllabus_result.get("found"):
+                pct = round((syllabus_result.get("confidence") or 0) * 100)
+                detail = f"Found via web · {pct}% confidence"
+            else:
+                detail = "Not found — using partial data"
+        yield _sse({"step": 0, "stage": "syllabus_acquisition", "status": "complete", "detail": detail})
+    except Exception as exc:
+        logger.warning("SSE stream — syllabus acquisition failed: %s", exc)
+        yield _sse({"step": 0, "stage": "syllabus_acquisition", "status": "error", "detail": str(exc)})
+
+    # ── Stage 1: Syllabus Intelligence ───────────────────────────────────────
+    yield _sse({"step": 1, "stage": "syllabus_intelligence", "status": "running"})
+    course_profile: dict = {}
+    try:
+        if syllabus_text:
+            course_profile = await syllabus_intelligence.run(syllabus_text)
+        categories = course_profile.get("grading_categories", [])
+        deadlines = course_profile.get("key_deadlines", [])
+        detail = (
+            f"{len(categories)} categor{'y' if len(categories) == 1 else 'ies'} · {len(deadlines)} deadline{'s' if len(deadlines) != 1 else ''}"
+            if categories
+            else "No grading schema extracted"
+        )
+        yield _sse({"step": 1, "stage": "syllabus_intelligence", "status": "complete", "detail": detail})
+    except Exception as exc:
+        logger.warning("SSE stream — syllabus intelligence failed: %s", exc)
+        yield _sse({"step": 1, "stage": "syllabus_intelligence", "status": "error", "detail": str(exc)})
+
+    # ── Stages 2–5: Parallel intelligence ────────────────────────────────────
+    for step, stage in [(2, "course_discovery"), (3, "resource_discovery"),
+                        (4, "reputation_analysis"), (5, "tool_detection")]:
+        yield _sse({"step": step, "stage": stage, "status": "running"})
+
+    topics = [c.get("name", "") for c in course_profile.get("grading_categories", [])]
+    course_identity: dict = {}
+    resources_result: dict = {}
+    reputation_result: dict = {}
+    tools_result: dict = {}
+    try:
+        course_identity, resources_result, reputation_result, tools_result = await asyncio.gather(
+            discovery.run(university, course, professor),
+            public_resources.run(course, university, topics),
+            reputation.run(course, professor or "unknown", university),
+            tool_discovery.run(syllabus_text or "", ""),
+        )
+
+        identity_detail = (
+            course_identity.get("canonical_name") or course_identity.get("course_code") or "Identity resolved"
+        )
+        resource_count = len(resources_result.get("resources", []))
+        resource_detail = f"{resource_count} resource{'s' if resource_count != 1 else ''} found" if resource_count else "No public resources found"
+
+        workload = reputation_result.get("workload_hours")
+        difficulty = reputation_result.get("difficulty")
+        rep_parts = [f"~{workload}h/week" if workload else None, difficulty]
+        rep_detail = " · ".join(p for p in rep_parts if p) or "Signal acquired"
+
+        tool_list = tools_result.get("tools", [])
+        tool_detail = ", ".join(t.get("tool_name", "") for t in tool_list[:3]) if tool_list else "No platforms detected"
+
+        yield _sse({"step": 2, "stage": "course_discovery", "status": "complete", "detail": identity_detail})
+        yield _sse({"step": 3, "stage": "resource_discovery", "status": "complete", "detail": resource_detail})
+        yield _sse({"step": 4, "stage": "reputation_analysis", "status": "complete", "detail": rep_detail})
+        yield _sse({"step": 5, "stage": "tool_detection", "status": "complete", "detail": tool_detail})
+    except Exception as exc:
+        logger.warning("SSE stream — parallel intelligence failed: %s", exc)
+        for step, stage in [(2, "course_discovery"), (3, "resource_discovery"),
+                            (4, "reputation_analysis"), (5, "tool_detection")]:
+            yield _sse({"step": step, "stage": stage, "status": "error", "detail": str(exc)})
+
+    # ── Stage 6: Obligation normalization ─────────────────────────────────────
+    yield _sse({"step": 6, "stage": "obligation_normalization", "status": "running"})
+    raw_deadlines = course_profile.get("key_deadlines", [])
+    normalized_obligations: dict = {}
+    try:
+        normalized_obligations = await obligation_deadline.run(raw_deadlines)
+        obligations = normalized_obligations.get("obligations", raw_deadlines)
+        ob_count = len(obligations)
+        ob_detail = (
+            f"{ob_count} obligation{'s' if ob_count != 1 else ''} ranked"
+            if ob_count
+            else "No obligations found"
+        )
+        yield _sse({"step": 6, "stage": "obligation_normalization", "status": "complete", "detail": ob_detail})
+    except Exception as exc:
+        logger.warning("SSE stream — obligation normalization failed: %s", exc)
+        yield _sse({"step": 6, "stage": "obligation_normalization", "status": "error", "detail": str(exc)})
+        obligations = raw_deadlines
+
+    # ── Stage 7: Persist ──────────────────────────────────────────────────────
+    yield _sse({"step": 7, "stage": "persist", "status": "running"})
+    bootstrap_data = {
+        "course_identity": course_identity,
+        "syllabus_status": syllabus_result,
+        "course_profile": course_profile,
+        "resources": resources_result.get("resources", []),
+        "detected_tools": tools_result.get("tools", []),
+        "student_signal": reputation_result,
+        "obligations": normalized_obligations.get("obligations", raw_deadlines),
+    }
+    try:
+        saved = queries.create_course(user_id, {
+            "university": university,
+            "course_name": course,
+            "course_code": course_identity.get("course_code"),
+            "professor": professor,
+            **bootstrap_data,
+        })
+        bootstrap_data["id"] = saved["id"]
+        logger.info("SSE bootstrap complete for user %s | course: %s @ %s", user_id, course, university)
+        yield _sse({"step": 7, "stage": "persist", "status": "complete", "detail": "Course saved"})
+    except Exception as exc:
+        logger.error("SSE stream — persist failed: %s", exc)
+        bootstrap_data["id"] = None
+        yield _sse({"step": 7, "stage": "persist", "status": "error", "detail": str(exc)})
+
+    # Final event carries the full result so the client can navigate immediately
+    yield _sse({"type": "result", "data": bootstrap_data})
+
+
+# ── Bootstrap — streaming SSE ────────────────────────────────────────────────
+
+@router.post("/bootstrap/stream")
+async def bootstrap_course_stream(
+    request: Request,
+    university: str = Form(...),
+    course: str = Form(...),
+    professor: str = Form(""),
+    syllabus: UploadFile | None = File(None),
+    user_id: str = Depends(get_user_id),
+):
+    """
+    Streaming bootstrap — returns a text/event-stream response.
+
+    Each agent stage emits an SSE event as it completes so the client can
+    update its progress UI in real time rather than waiting 35–45 s for the
+    full response.
+
+    Event types:
+      heartbeat              — sent immediately to confirm the stream is open
+      {step, stage, status}  — running / complete / error for each of 8 stages
+      {type: "result", data} — final BootstrapResponse payload
+
+    Consume with fetch + ReadableStream (EventSource doesn't support POST).
+    """
+    university = _sanitize_str(university, "university")
+    course = _sanitize_str(course, "course")
+    professor = _sanitize_str(professor, "professor") if professor else ""
+
+    pdf_bytes: bytes | None = None
+    if syllabus:
+        pdf_bytes = await _read_pdf(syllabus)
+
+    return StreamingResponse(
+        _stream_pipeline_events(user_id, university, course, professor, pdf_bytes),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # disable nginx proxy buffering
+        },
+    )
 
 
 # ── Background job runner ────────────────────────────────────────────────────

@@ -103,6 +103,31 @@ export const api = {
     return res.json();
   },
 
+  /**
+   * Streaming bootstrap — POSTs form data, returns a ReadableStream of SSE events.
+   *
+   * Event format (each line prefixed "data: "):
+   *   {"type": "heartbeat"}
+   *   {"step": 0..7, "stage": string, "status": "running"|"complete"|"error", "detail"?: string}
+   *   {"type": "result", "data": BootstrapResponse}
+   *
+   * Returns the raw Response so the caller can stream body.getReader().
+   * Throws ApiError if the initial HTTP response is not 2xx.
+   */
+  bootstrapCourseStream: async (formData: FormData): Promise<Response> => {
+    const auth = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/courses/bootstrap/stream`, {
+      method: "POST",
+      headers: auth,
+      body: formData,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new ApiError(res.status, text);
+    }
+    return res;
+  },
+
   getActionPlan: (courseId: string) =>
     request<ActionPlanResponse>(`/courses/${courseId}/action-plan`),
 

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useBootstrap, useDemoCourse } from "@/hooks/use-course";
+import { useDemoCourse } from "@/hooks/use-course";
+import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastProvider";
 import type { BootstrapResponse } from "@/types/course";
 
@@ -153,9 +154,23 @@ function useAgentHealth(): AgentHealth {
   return status;
 }
 
+// Map backend stage name → step index in INITIAL_STEPS
+const STAGE_TO_STEP: Record<string, number> = {
+  syllabus_acquisition: 0,
+  syllabus_intelligence: 1,
+  course_discovery: 2,
+  resource_discovery: 3,
+  reputation_analysis: 4,
+  tool_detection: 5,
+  obligation_normalization: 6,
+  persist: 7,
+};
+
+// persist is an internal stage; UI only has 7 visible steps (indices 0–6)
+const VISIBLE_STEPS = 7;
+
 export default function CourseSetupPage() {
   const router = useRouter();
-  const { bootstrap } = useBootstrap();
   const { loadDemoCourse } = useDemoCourse();
   const { toast } = useToast();
   const agentHealth = useAgentHealth();
@@ -165,13 +180,8 @@ export default function CourseSetupPage() {
   const [idle, setIdle] = useState(true);
 
   function updateStep(i: number, patch: Partial<AgentStep>) {
+    if (i >= VISIBLE_STEPS) return; // persist stage is not shown in UI
     setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
-  }
-
-  function updateSteps(indices: number[], patch: Partial<AgentStep>) {
-    setSteps((prev) =>
-      prev.map((s, idx) => (indices.includes(idx) ? { ...s, ...patch } : s)),
-    );
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -183,52 +193,59 @@ export default function CourseSetupPage() {
     const form = e.currentTarget;
     const data = new FormData(form);
 
-    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-    // Kick off the real API call immediately in the background
-    const bootstrapPromise = bootstrap(data, {
-      university: (data.get("university") as string).trim(),
-      course: (data.get("course") as string).trim(),
-      professor: (data.get("professor") as string)?.trim() ?? "",
-    });
-
     try {
-      // Animate pipeline stages while API runs in parallel
-      // Stage 1: Syllabus Acquisition (sequential)
-      updateStep(0, { status: "running" });
-      await delay(900);
+      const response = await api.bootstrapCourseStream(data);
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalCourse: BootstrapResponse | null = null;
 
-      // Stage 2: Syllabus Intelligence (sequential)
-      updateStep(0, { status: "done" });
-      updateStep(1, { status: "running" });
-      await delay(1100);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      // Stage 3: Parallel batch (Discovery + Resources + Reputation + Tools)
-      updateStep(1, { status: "done" });
-      updateSteps([2, 3, 4, 5], { status: "running" });
-      await delay(1400);
+        buffer += decoder.decode(value, { stream: true });
 
-      // Stage 4: Obligation normalization (sequential, after parallel batch)
-      updateSteps([2, 3, 4, 5], { status: "done" });
-      updateStep(6, { status: "running" });
+        // SSE lines look like "data: {...}\n\n"
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? ""; // keep incomplete last chunk
 
-      // Wait for the actual API response
-      const newCourse = await bootstrapPromise;
-      await delay(300);
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue;
+          try {
+            const event = JSON.parse(trimmed.slice(5).trim()) as Record<string, unknown>;
 
-      // Populate result details from response
-      const details = buildDetails(newCourse as unknown as BootstrapResponse);
-      setSteps((prev) =>
-        prev.map((s, i) => ({
-          ...s,
-          status: "done" as const,
-          detail: details[i],
-        })),
-      );
+            if (event.type === "heartbeat") continue;
 
-      await delay(500);
+            if (event.type === "result") {
+              finalCourse = event.data as BootstrapResponse;
+              continue;
+            }
+
+            const step = STAGE_TO_STEP[event.stage as string];
+            if (step === undefined) continue;
+
+            const status = event.status as string;
+            if (status === "running") {
+              updateStep(step, { status: "running" });
+            } else if (status === "complete") {
+              updateStep(step, { status: "done", detail: (event.detail as string) || undefined });
+            } else if (status === "error") {
+              updateStep(step, { status: "error", detail: (event.detail as string) || undefined });
+            }
+          } catch {
+            // malformed JSON line — skip
+          }
+        }
+      }
+
+      if (!finalCourse?.id) {
+        throw new Error("Bootstrap completed but no course ID was returned.");
+      }
+
       toast({ title: "Course bootstrapped!", variant: "success" });
-      router.push(`/dashboard/course/${newCourse.id}`);
+      router.push(`/dashboard/course/${finalCourse.id}`);
     } catch (err) {
       setSteps((prev) =>
         prev.map((s) =>
