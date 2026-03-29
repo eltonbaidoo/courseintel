@@ -1,333 +1,311 @@
 # CourseIntel — Master Plan
 
-> Multi-agent academic intelligence engine that bootstraps a complete course profile — grading schema, deadlines, resources, tools, student signal, and a weekly action plan — from a university name and course code in under 45 seconds.
+## One-liner
+
+CourseIntel is a multi-agent AI orchestration system that automatically decomposes a single course submission into 13 parallel intelligence tasks, executes them across a tiered LLM provider network, and aggregates the results into a unified academic intelligence profile — eliminating 45–90 minutes of manual workflow per course.
 
 ---
 
-## Problem Definition
+## Vision Clarity
 
-A student enrolls in CSC 212 at URI. To understand what they're actually in for, they need to:
+**Problem:** A university student enrolling in CSC 212 must manually read a 15-page syllabus, parse the grading breakdown into a spreadsheet, search Reddit and RateMyProfessors for workload expectations, Google for GitHub repos and open courseware, copy deadlines into a calendar, and ask classmates about required tools (Gradescope, Ed Discussion, etc.). This takes **45–90 minutes per course, per semester** — fragmented across PDF, Reddit, GitHub, department websites, and social channels.
 
-1. Read the 15-page syllabus and manually parse the grading breakdown
-2. Open a spreadsheet to track their weighted grade as assignments come in
-3. Search Reddit for "CSC 212 URI hard?" to understand workload expectations
-4. Separately Google for GitHub repos, YouTube lectures, and open courseware
-5. Re-read the syllabus to copy deadlines into their calendar
-6. Ask classmates what tools they'll need (Gradescope, Ed Discussion, Valgrind...)
+**Solution:** CourseIntel accepts one form submission (university + course name + optional PDF) and automatically decomposes it into 13 specialized agent subtasks that execute in parallel, then aggregates the outputs into a structured course intelligence profile. The user waits ~35–45 seconds instead of 45–90 minutes.
 
-**This takes 45–90 minutes per course, per semester.** Students with 4–5 courses repeat this for every one. The information exists — it's all public — but it's fragmented across a PDF, Reddit, GitHub, RateMyProfessors, and department websites.
+**North star metric:** Time-to-first-insight — from form submission to complete course profile with grade breakdown, action plan, and resource list — under 45 seconds.
 
-**CourseIntel eliminates this entirely.** One form submission → all of the above, structured and actionable, in under 45 seconds.
-
-**Target users:** University students (primary), academic advisors (secondary), course instructors who want to understand how their course is perceived publicly.
+**Hackathon scope:** A fully functional end-to-end orchestration engine: async job queue with status polling, 13 implemented agents with typed outputs, deterministic grade math with linear regression trend prediction, Chrome extension with 3 LMS scrapers, priority scheduler for deadline obligations, stale task reaper, exponential backoff retry in the LLM gateway, and 7 dashboard screens — all deployed on Vercel + Render.
 
 ---
 
-## Vision and North Star
+## Technical Depth
 
-**North star metric:** Time-to-first-insight — from "I submitted the form" to "I see my grade breakdown, action plan, and resource list" — under 45 seconds.
+### Task Decomposition Pipeline
 
-**Long-term vision:** CourseIntel becomes the authoritative intelligence layer for academic courses — a platform that any LMS can integrate to give students instant course context, and that instructors use to see how their course is perceived relative to peers.
-
-**Hackathon scope:** A fully functional end-to-end product: web app, Chrome extension (grade import from Gradescope/Canvas/Brightspace), multi-agent backend, and offline demo mode — all working without a paid API key.
-
----
-
-## Technical Architecture
-
-### Three-Layer System
+The bootstrap endpoint (`POST /courses/bootstrap`) acts as the **planner**: it deterministically decomposes a user's course submission into a multi-stage execution plan without requiring any workflow definition from the user.
 
 ```
-Chrome Extension (Manifest V3)
-  ├── content/scraper.ts    — DOM scrapers for Gradescope, Canvas, Brightspace
-  ├── background/service-worker.ts  — Auth handshake, grade POST
-  └── popup/popup.ts        — Platform detection UI, course selector
+User submits: { university: "URI", course: "CSC 212", professor: "Dr. Smith" }
 
-Next.js 16 Frontend (Vercel)
-  ├── App Router + TypeScript strict mode
-  ├── Zustand global store (optimistic grade updates)
-  ├── 7 dashboard screens + landing page + auth flows
-  └── lib/ics.ts — ICS calendar parsing (no server round-trip)
+Planner auto-decomposes into:
 
-FastAPI Backend (Render, Python 3.11)
-  ├── 13 specialized async agents
-  ├── Multi-provider LLM gateway (OpenAI → Gemini → Groq)
-  ├── Pydantic v2 response_model validation on all endpoints
-  └── Supabase PostgreSQL + RLS
+Stage A — Sequential (each depends on previous):
+  1. SyllabusAcquisitionAgent  → web search + PDF fetch
+  2. SyllabusIntelligenceAgent → extract grading categories, deadlines, policies
+
+Stage B — Parallel via asyncio.gather() (all 4 simultaneous):
+  3. DiscoveryAgent          → canonical course identity
+  4. PublicResourcesAgent    → GitHub, Reddit, YouTube, courseware
+  5. ReputationAgent         → workload, difficulty, student signals
+  6. ToolDiscoveryAgent      → Gradescope, Ed Discussion, etc.
+
+Stage C — Post-parallel (needs Stage B output):
+  7. ObligationDeadlineAgent → urgency-ranked deadlines with conflict detection
 ```
 
-### Non-Trivial Technical Choices
+The user never defines this pipeline — they submit a task type (course bootstrap) and payload, and the coordinator generates the execution subtasks automatically.
+
+### Non-Trivial Technical Decisions
 
 | Decision | Rationale |
 |----------|-----------|
-| `asyncio.gather()` for parallel agents | Cuts bootstrap time from ~120s sequential to ~35s wall clock (4 agents run simultaneously in Stage B) |
-| Deterministic grade math — zero LLM | Grade calculations must be 100% reproducible. Algebraic solver: `required = (target - already_earned) / remaining_weight` — no hallucination risk |
-| `TypedDict` return annotations on all 13 agents | Enables static analysis of agent outputs without runtime overhead; catches schema drift at type-check time |
-| Pydantic v2 `response_model` on all endpoints | FastAPI validates and serializes agent output before it reaches the client; prevents malformed responses from propagating |
-| `try/except Exception` wrapping entire `call_llm` | `RuntimeError` from missing API key and `json.JSONDecodeError` from malformed LLM output both handled; pipeline never crashes on a single agent failure |
-| Multi-provider LLM gateway with lazy-init clients | `openai.AsyncOpenAI` / Gemini / Groq clients initialized once on first use (not at import time) — avoids startup failure when key is not set |
-| Groq uses OpenAI SDK with `base_url` override | Same Python SDK, different endpoint — zero code duplication across providers |
-| JWT shared between web app and extension | Extension reads Supabase session from active tab's `localStorage` — no second login required, no token storage in extension popup |
-| Supabase RLS on all three tables | `auth.uid() = user_id` enforced at the database level — cross-user data access impossible regardless of application bugs |
-| Chrome Manifest V3 service worker | MV3 required for Chrome Web Store; service worker is short-lived by design, all operations complete in a single event cycle |
-| `SELECT ... SKIP LOCKED` analog via RLS | Supabase RLS + `user_id` column prevents concurrent writes from overwriting each other without explicit transaction locking |
+| **asyncio.gather()** for parallel agent execution | Cuts wall-clock time from ~120s sequential to ~35s. 4 independent agents run simultaneously while sharing the same event loop. |
+| **asyncio.Lock-protected in-memory job store** | Safe concurrent access for the async bootstrap job queue. Job lifecycle: `pending → running → completed \| failed \| timed_out`. Documented upgrade path to Redis HSET for horizontal scaling. |
+| **Exponential backoff retry in LLM gateway** | Transient errors (rate-limit 429, server 5xx, network) are retried 3 times with 1s → 2s → 4s backoff. Permanent errors (auth 401) fail fast. `_is_transient()` classifies errors by message pattern — works across OpenAI, Gemini, and Groq without provider-specific error types. |
+| **Stale task reaper via FastAPI lifespan** | Background asyncio task runs every 60 seconds. Marks jobs still `running` after 5 minutes as `timed_out`. Evicts terminal jobs after 24 hours. Prevents memory leaks from abandoned tasks. |
+| **Priority scheduling for obligations** | `GET /courses/{id}/obligations/prioritized` sorts deadlines by urgency rank (critical=4, high=3, medium=2, low=1). Assigned by ObligationDeadlineAgent using deadline proximity + grade weight + syllabus policy analysis. |
+| **Linear regression grade trend prediction** | `compute_grade_trend()` sorts entries by timestamp, builds cumulative weighted grade series, fits least-squares line, projects final grade. Returns slope, trend label, confidence level, and data points for charting — all deterministic Python, zero LLM. |
+| **Deterministic algebraic grade solver** | `required = (target / 100 - already_earned) / remaining_weight`. Grade calculations are 100% reproducible — no LLM hallucination risk. Covered by 25 parametrized unit tests. |
+| **Multi-provider LLM gateway with lazy-init** | OpenAI → Gemini → Groq auto-selected from .env. Clients initialized on first use (not at import time). Groq uses OpenAI SDK with `base_url` override — zero code duplication. |
+| **TypedDict return annotations on all 13 agents** | Static analysis catches schema drift at type-check time. Each agent returns a typed dict (`DiscoveryResult`, `ReputationResult`, `SyllabusProfile`, etc.) without runtime overhead. |
+| **JWT shared between web app and Chrome extension** | Extension reads Supabase session from active tab's localStorage — no second login. Service worker completes all operations in a single event cycle (MV3 compliant). |
+| **Supabase RLS on all tables** | `auth.uid() = user_id` enforced at database level. Cross-user data access impossible regardless of application bugs. Composite indexes on `(user_id, course_code)` and `(course_id, category)` for fast lookups. |
+
+### Agent Model Tier Assignment
+
+| Tier | Model | Agents | Rationale |
+|------|-------|--------|-----------|
+| OPUS | GPT-4o / Gemini 1.5 Pro / Llama 3.3 70B | JudgmentAgent, SyllabusIntelligenceAgent | Needs strong reasoning for risk assessment, grading schema extraction |
+| SONNET | GPT-4o / Gemini 1.5 Pro / Llama 3.3 70B | ReputationAgent, StudyContextAgent | Balanced quality vs. cost for sentiment analysis, topic extraction |
+| HAIKU | GPT-4o-mini / Gemini 2.0 Flash / Llama 3.1 8B | All other 9 agents | Fast/cheap for structured extraction (JSON parsing, link collection, tool detection) |
 
 ---
 
-## The 13-Agent Pipeline
+## Innovation
 
-### Stage A — Sequential (each depends on the previous)
+**Core innovation:** CourseIntel eliminates manual workflow definition for academic intelligence gathering. The user submits a course name — not a pipeline, not a DAG, not a workflow specification. The planner decomposes the submission into 13 typed agent tasks with dependency ordering, executes them across a tiered LLM provider network, and aggregates structured outputs.
 
-| Agent | Model | Input | Output |
-|-------|-------|-------|--------|
-| `SyllabusAcquisitionAgent` | Haiku/Flash | course + university + professor | Finds syllabus URL via Tavily, fetches PDF text. Returns `{found, confidence, source, syllabus_text}` |
-| `SyllabusIntelligenceAgent` | Opus/Pro | syllabus text | Extracts `SyllabusProfile`: grading categories (name + weight + notes), grade scale, late policy, deadlines, required tools |
-
-### Stage B — Parallel via `asyncio.gather()` (all 4 simultaneous)
-
-| Agent | Model | Output TypedDict |
-|-------|-------|-----------------|
-| `DiscoveryAgent` | Haiku | `DiscoveryResult`: canonical name, course code, credit hours, official links, confidence |
-| `PublicResourcesAgent` | Haiku | `PublicResourcesResult`: list of `ResourceItem` (title, url, type, relevance_score, reason) |
-| `ReputationAgent` | Sonnet | `ReputationResult`: workload, difficulty, grading_style, key_warnings, positive_signals, confidence |
-| `ToolDiscoveryAgent` | Haiku | `ToolDiscoveryResult`: list of `ToolItem` (tool_name, evidence, purpose, confidence, integration_type) |
-
-### Stage C — Post-parallel (needs Stage B output)
-
-| Agent | Model | Output TypedDict |
-|-------|-------|-----------------|
-| `ObligationDeadlineAgent` | Haiku | `ObligationResult`: normalized obligations with urgency levels (critical/high/medium/low) and conflict notes |
-
-### On-Demand Agents
-
-| Agent | Trigger | Model |
-|-------|---------|-------|
-| `GradeIntelligenceAgent` | Every grade entry change | **No LLM** — pure deterministic Python |
-| `JudgmentAgent` | "What do I do this week?" | GPT-4o — risk level + weekly action plan as `JudgmentResult` TypedDict |
-| `StudyContextAgent` | After material upload | Haiku — key topics, weak coverage areas |
-| `DocumentationHelpAgent` | Resource curation | Haiku — course-specific help cards |
-| `ExtensionOrchestrationAgent` | Extension sync | Haiku — validates scraped items against course schema |
-| `ExtensionValidationAgent` | Extension sync | Haiku — cross-checks scraped grades against syllabus |
-
----
-
-## Grade Math Engine (Zero LLM)
-
-`GradeIntelligenceAgent` is the only agent with no LLM involvement — intentionally.
-
-```python
-# Weighted average across categories
-for category, entries in grouped:
-    category_avg = mean(e.score_earned / e.score_possible for e in entries)
-    weighted_total += category_avg * category.weight
-
-current_grade = weighted_total / sum(weights_with_entries)
-
-# Algebraic required-score solver
-already_earned = current_grade * (1 - remaining_weight)
-required = (target / 100 - already_earned) / remaining_weight
-feasible = required <= 1.0
-```
-
-Covered by **18 parametrized unit tests** (letter grade thresholds A through F, zero-division guard, multi-entry categories, feasibility edge cases).
-
----
-
-## LLM Provider Strategy
-
-CourseIntel runs free. No credit card required.
+**How this differs from manual orchestration:**
 
 ```
-Priority 1: OPENAI_API_KEY    → GPT-4o / GPT-4o-mini (paid, highest quality)
-Priority 2: GEMINI_API_KEY    → Gemini 1.5 Pro / 2.0 Flash (free tier, Google AI Studio)
-Priority 3: GROQ_API_KEY      → Llama 3.3 70B / 3.1 8B (free tier, 14,400 req/day)
-No key set  → 503 on bootstrap, health badge shows "No LLM"
+Manual workflow (ChatGPT approach):
+  Student → "Tell me about CSC 212" → single LLM call → unstructured text
+
+CourseIntel orchestration:
+  Student → "CSC 212 at URI" →
+    Planner decomposes into 13 typed tasks →
+    4 tasks run in parallel (asyncio.gather) →
+    Type-aware aggregation into structured profile →
+    Deterministic grade model + algebraic solver →
+    Priority-ranked action plan
 ```
 
-All three providers share the same `call_llm(system, prompt, model, max_tokens)` interface. The gateway uses lazy-initialized singleton clients so startup never fails on a missing key. Live status is exposed via `GET /health/agents` (makes a real LLM completion call with PING → PONG) and shown as a badge on the setup page.
+The decomposition is deterministic (rule-based per task type: bootstrap, grade computation, action planning, extension validation), which makes it **reproducible and debuggable** — a deliberate design choice over LLM-based planning, which would introduce non-determinism in the critical path. The LLM is used for intelligence (what's in the syllabus?) not for orchestration (which agents to run).
 
----
-
-## Chrome Extension — Confirmed Working Scrapers
-
-Three DOM scrapers with real CSS selectors, validated by **29 Jest unit tests** running in jsdom:
-
-| Platform | Selectors | Test Coverage |
-|----------|-----------|--------------|
-| Gradescope | `.js-assignmentRow`, `.table--assignments tbody tr`, `.assignmentTitle`, `.submissionTimeChart--dueDate`, `.js-due-date` | 5 test cases |
-| Canvas | `.assignment`, `.ig-row`, `.ig-title`, `.assignment-date-due`, `.due_date_display` | 4 test cases |
-| Brightspace (D2L) | `.d2l-table tr`, `.d2l-datalist-item`, `.dco_title`, `.d2l-dates-text` | 5 test cases |
-| Generic fallback | Date-pattern regex scan on `tr, li, .card, .item` | 5 test cases |
-
-`detectPlatform(hostname)` is a pure function (accepts hostname arg, defaults to `window.location.hostname`) — testable without DOM manipulation. 8 hostname detection tests.
-
----
-
-## Background Job Queue & Priority Scheduler
-
-### Async Bootstrap (non-blocking)
-
-The bootstrap pipeline can be triggered in two modes:
-
-```
-POST /courses/bootstrap        → blocks ~35-45s, returns BootstrapResponse
-POST /courses/bootstrap/async  → returns immediately (HTTP 202) with job_id
-GET  /courses/jobs/{job_id}    → poll for status + result
-```
-
-**Job lifecycle:**
-```
-pending → running → completed
-                  → failed
-                  → timed_out  (set by reaper if still running after 5 min)
-```
-
-The job store (`services/job_store.py`) is an `asyncio.Lock`-protected in-memory dict — safe for concurrent access in a single uvicorn process. Upgrade path: replace `_store` with Redis `HSET` calls for multi-worker deployments.
-
-### Priority Scheduler
-
-```
-GET /courses/{id}/obligations/prioritized
-```
-
-Returns a course's obligations ranked by urgency level assigned by `ObligationDeadlineAgent`:
-
-| Urgency Level | Priority Score |
-|--------------|---------------|
-| critical | 4 — surfaces first |
-| high | 3 |
-| medium | 2 |
-| low | 1 — surfaces last |
-
-### Stale Task Reaper
-
-A background asyncio task runs every 60 seconds on startup (registered via FastAPI `lifespan`). It:
-1. Marks any job still in `running` state after 5 minutes as `timed_out`
-2. Evicts terminal jobs (completed/failed/timed_out) older than 24 hours
-
-This prevents memory leaks from abandoned jobs and surfaces hung tasks to clients polling the status endpoint.
+**What no competitor offers:** The combination of automatic multi-agent decomposition, live grade syncing via Chrome extension, and a deterministic algebraic grade model in one system. Each piece exists somewhere — CourseIntel integrates them into a single submission-to-action-plan pipeline.
 
 ---
 
 ## Scalability Design
 
-### Current (hackathon scope)
-Each bootstrap request runs agents inline in the FastAPI request handler. `asyncio.gather()` provides concurrency within a single request but not across requests. Bottleneck: LLM API latency (dominated by Tavily + SyllabusIntelligence at ~35s wall clock).
+### Current capacity (hackathon scope)
 
-### Known limits and mitigation path
+Each bootstrap runs agents inline in the FastAPI request handler. `asyncio.gather()` provides concurrency within a request. The async job queue (`POST /courses/bootstrap/async`) offloads long-running bootstraps to `BackgroundTasks` so the HTTP response returns immediately.
 
-| Bottleneck | Current | Mitigation Path |
-|-----------|---------|----------------|
-| Per-request LLM cost | ~$0.008/bootstrap (Groq free tier: $0) | Result caching by `(course_code, university)` hash — same course bootstrapped by 100 students costs the same as 1 |
-| Concurrent bootstraps | Handled by uvicorn async workers (default 1 process) | Render auto-scales workers; background task queue (Redis + arq) for >10 concurrent |
-| Supabase free tier limits | 500MB storage, 2GB bandwidth | Upgrade path: Supabase Pro at $25/mo for university-scale use |
-| Render free tier sleep | 15-min idle spindown | GitHub Actions keepalive workflow pings `/health` every 10 minutes |
+### 10× scale (1,000 concurrent users)
 
-### Horizontal scaling path
-1. Extract bootstrap pipeline into a background task (Celery/arq with Redis broker)
-2. Cache bootstrap results by `SHA256(course_code + university)` with 7-day TTL
-3. Serve cached results from CDN for common courses (CSC 212 at URI → same result for all students)
+| Bottleneck | Current | Mitigation |
+|-----------|---------|------------|
+| Per-request LLM cost | ~$0.008/bootstrap (Groq free: $0) | **Result caching** by `SHA256(course_code + university)` with 7-day TTL. Same course bootstrapped by 100 students costs the same as 1 request. |
+| Concurrent bootstraps | asyncio in 1 uvicorn worker | **Replace in-memory job store with Redis HSET** (documented in `job_store.py` comments). Render auto-scales workers; each worker connects to shared Redis. |
+| Job store memory | In-memory dict + asyncio.Lock | Redis HSET with TTL — zero application memory. The `_store` dict is a drop-in replacement target. |
+| Stale task reaper | Single asyncio loop in one process | Redis-backed reaper using `SCAN` + TTL expiry. Same 60s interval, but distributed across workers. |
 
----
+### 100× scale (10,000 concurrent users, university-wide deployment)
 
-## Ecosystem and Integration Plan
+| Bottleneck | Mitigation |
+|-----------|------------|
+| LLM rate limits | **CDN-served cached results** for the top 500 courses (pre-bootstrapped). Cache hit = zero LLM calls, ~50ms response. |
+| Agent execution time | **Background task queue (arq + Redis broker)** replaces `BackgroundTasks`. Dedicated worker pool with configurable concurrency. |
+| Database connections | **Supabase connection pooling** (PgBouncer built-in). Upgrade from free tier (500MB) to Pro ($25/mo). |
+| Chrome extension traffic | **Edge-cached validation** — extension scrape payloads validated client-side before hitting the API. |
 
-### Current integrations (built)
-- **Gradescope** — DOM scraper + Extension validation
-- **Canvas** — DOM scraper
-- **Brightspace/D2L** — DOM scraper
-- **Tavily** — web search for syllabus acquisition and resource discovery
-- **Supabase** — auth, PostgreSQL, Row Level Security
-- **Google AI Studio** — Gemini free tier
-- **Groq** — Llama free tier
+### Message queue migration path
 
-### External worker / API contract (designed, not yet built)
-Any external system can integrate via the REST API. Auth follows the same JWT pattern as the web app:
+The current `BackgroundTasks` → polling pattern transitions to a proper message queue:
 
 ```
-POST /courses/bootstrap
-  Authorization: Bearer <supabase_jwt>
-  Content-Type: multipart/form-data
-  Body: { university, course, professor, syllabus? }
-  Response: BootstrapResponse (Pydantic-validated)
-
-GET /courses/{id}/action-plan
-  Authorization: Bearer <supabase_jwt>
-  Response: ActionPlanResponse
-
-POST /extension/scrape
-  Authorization: Bearer <supabase_jwt>
-  Body: { course_id, platform, url, raw_text, items[] }
-  Response: { accepted_items, message }
+Current:   POST /bootstrap/async → BackgroundTasks → poll GET /jobs/{id}
+Future:    POST /bootstrap/async → Redis pub/sub → WebSocket push to client
 ```
 
-### Future ecosystem
-- **University LMS plugin** — universities embed CourseIntel via iframe or OAuth to give all students automatic course bootstrapping on enrollment
-- **Instructor dashboard** — professors see aggregate student signal (workload perception, common pitfalls) from their course's public reputation
-- **Third-party agent registry** — external agents implement the `run(input) -> TypedDict` interface and declare their TypedDict schema; the pipeline coordinator includes them automatically
+The `services/job_store.py` abstraction isolates all job state management behind `create_job()`, `update_job()`, `get_job()`, `reap_stale_jobs()` — swapping the backend from dict to Redis requires changing ~20 lines in one file.
 
 ---
 
-## Risk Assessment
+## Ecosystem Thinking
 
-| Risk | Probability | Impact | Mitigation |
-|------|------------|--------|------------|
-| LLM API unavailable | Medium | High | Three-provider fallback chain (OpenAI → Gemini → Groq); bootstrap degrades gracefully — pipeline returns partial results with available data |
-| Tavily search rate limit | Low | Medium | Agents return empty results (not errors); course still bootstraps from uploaded PDF if Tavily fails |
-| LLM returns malformed JSON | High (5–15% of calls) | Low | `try/except Exception` wraps `call_llm` in every agent — malformed output triggers logged warning + empty safe default |
-| Supabase RLS misconfiguration | Low | Critical | RLS policies tested against schema.sql; `auth.uid() = user_id` is the only policy pattern, minimizing misconfiguration surface |
-| Chrome MV3 service worker termination | Medium | Low | All operations complete in a single event (scrape → POST → response); no state stored in service worker memory |
-| Render free tier cold start (15-min sleep) | High | Medium | GitHub Actions keepalive workflow pings `/health` every 10 minutes; first request to a cold instance adds ~30s |
-| DOM scraper breakage after LMS update | Medium | Medium | 29 Jest tests catch regressions; selectors target stable class patterns (`.js-assignmentRow` vs. dynamic style classes) |
+### Current integrations (built and tested)
+
+| System | Integration Type | Evidence |
+|--------|-----------------|----------|
+| **Gradescope** | Chrome extension DOM scraper | 5 Jest tests, CSS selectors: `.js-assignmentRow`, `.assignmentTitle`, `.submissionTimeChart--dueDate` |
+| **Canvas** | Chrome extension DOM scraper | 4 Jest tests, CSS selectors: `.assignment`, `.ig-row`, `.ig-title`, `.assignment-date-due` |
+| **Brightspace/D2L** | Chrome extension DOM scraper | 5 Jest tests, CSS selectors: `.d2l-table tr`, `.dco_title`, `.d2l-dates-text` |
+| **Supabase** | Auth, PostgreSQL, Row Level Security | JWT verification, `auth.uid() = user_id` on all 3 tables |
+| **OpenAI** | LLM provider (GPT-4o, GPT-4o-mini) | via `openai` Python SDK |
+| **Google AI Studio** | LLM provider (Gemini 1.5 Pro, 2.0 Flash) | via `google-generativeai` SDK, free tier |
+| **Groq** | LLM provider (Llama 3.3 70B, 3.1 8B) | via OpenAI SDK with `base_url` override, free tier |
+| **Tavily** | Web search for syllabus + resource discovery | Free tier (1,000 req/month) |
+
+### REST API contract for external integrations
+
+Any external system can integrate via authenticated REST endpoints:
+
+```
+POST /courses/bootstrap           — Synchronous: blocks ~35s, returns full profile
+POST /courses/bootstrap/async     — Async: returns job_id (HTTP 202), poll for result
+GET  /courses/jobs/{job_id}       — Poll job status + result
+GET  /courses/{id}/action-plan    — Weekly risk-aware action plan (JudgmentAgent)
+GET  /courses/{id}/obligations/prioritized — Urgency-ranked deadlines
+GET  /grades/courses/{id}/trend   — Grade trend prediction (linear regression)
+POST /grades/compute              — Stateless weighted grade calculation
+POST /grades/goal-simulator       — Required-score algebraic solver
+POST /extension/scrape            — Chrome extension grade import + validation
+
+Auth: Bearer <supabase_jwt> on all endpoints
+```
+
+### External agent interface
+
+New agents implement the `run(input) -> TypedDict` pattern and declare their return schema. The pipeline coordinator includes them by adding one import and one `asyncio.gather()` call. No framework, no decorator, no registration — just an async function.
+
+```python
+# Example: adding a new agent to the parallel execution stage
+from agents import new_agent  # implements: async def run(...) -> NewAgentResult
+
+# In courses.py, add to the gather call:
+results = await asyncio.gather(
+    discovery.run(...),
+    public_resources.run(...),
+    reputation.run(...),
+    tool_discovery.run(...),
+    new_agent.run(...),  # ← added here
+)
+```
 
 ---
 
-## Competitive Landscape
+## Problem Definition
 
-| Tool | What it does | Why it's not CourseIntel |
-|------|-------------|--------------------------|
-| **RateMyProfessors** | Professor ratings | No grading schema, no resource discovery, no grade calculator |
-| **Syllabi.com / Koofers** | Syllabus search | No AI extraction, no structured output, no grade tracking |
-| **Notion / Obsidian** | Manual note-taking | Requires student to do all the work; no automation |
-| **Canvas / Gradescope** | LMS gradebook | Shows raw grades only; no weighted calculation, no advisor |
-| **ChatGPT (manual)** | Paste syllabus → ask questions | Stateless, no course tracking, no extension, no grade model |
+### Quantified problem
 
-**CourseIntel's differentiator:** It is the only tool that (1) automatically finds and parses the syllabus without a URL, (2) runs parallel agents to build a multi-dimensional course model, (3) syncs live grades from the LMS via extension, and (4) combines all of this into a risk-aware weekly action plan. The combination is what's novel — any individual piece exists somewhere, but nowhere does a student get all of it automatically from a single form submission.
+A student enrolling in a single course must:
+
+| Task | Time (manual) | Time (CourseIntel) |
+|------|--------------|-------------------|
+| Read and parse syllabus grading breakdown | 15–20 min | 0 (auto-extracted) |
+| Set up grade tracking spreadsheet | 10–15 min | 0 (built-in calculator) |
+| Search Reddit/RMP for workload expectations | 10–15 min | 0 (ReputationAgent) |
+| Find GitHub repos, YouTube lectures, courseware | 10–15 min | 0 (PublicResourcesAgent) |
+| Copy deadlines into calendar | 5–10 min | 0 (ObligationAgent + ICS export) |
+| Identify required tools (Gradescope, etc.) | 5–10 min | 0 (ToolDiscoveryAgent) |
+| **Total per course** | **45–90 min** | **35–45 sec** |
+
+For a student taking 4–5 courses per semester, this is **3–7.5 hours of low-value administrative work** eliminated. At a university with 10,000 undergraduates, that's **30,000–75,000 hours per semester**.
+
+### Target users
+
+1. **University students (primary):** Need fast course context for enrollment decisions and semester planning. First-generation college students benefit most — they lack the informal networks that pass this information socially.
+2. **Academic advisors (secondary):** Can recommend CourseIntel to advisees for self-service course preparation, reducing advisor load.
+3. **Course instructors (tertiary):** Can see how their course is perceived publicly (workload expectations, common pitfalls) via the ReputationAgent signal.
 
 ---
 
 ## User Impact
 
 ### Measured benchmark
-A manual end-to-end workflow (syllabus parse + grade setup + resource search + deadline entry) for a single course takes **45–90 minutes** for a thorough student. CourseIntel completes the equivalent in **35–45 seconds** — a **60–120× reduction** in time-to-insight.
 
-For a student taking 4 courses, this saves 3–6 hours at the start of each semester. For 10,000 students at a university, that's 30,000–60,000 hours of low-value administrative work eliminated per semester.
+| Metric | Value |
+|--------|-------|
+| Manual workflow time | 45–90 minutes per course |
+| CourseIntel bootstrap time | 35–45 seconds |
+| **Time reduction** | **60–120× per course** |
+| Students affected at one university (10,000 UG) | 30,000–75,000 hours saved per semester |
+| Cost to student | $0 (Groq/Gemini free tier) |
 
 ### Qualitative impact
-- Students who currently don't read the full syllabus now get the key policies surfaced automatically
-- First-generation college students get the same resource discovery as students with older siblings who went to the same school
-- The weekly action plan from JudgmentAgent gives students without academic advisors a data-driven answer to "what should I focus on?"
+
+- Students who currently **don't read the full syllabus** now get key policies surfaced automatically
+- **First-generation college students** get the same resource discovery as students with informal networks
+- The weekly **action plan from JudgmentAgent** gives students without academic advisors a data-driven answer to "what should I focus on this week?"
+- Grade **trend prediction** with linear regression gives early warning when performance is declining, before it's too late to recover
 
 ---
 
-## Execution Plan
+## Market Awareness
 
-### Phase 1 — Foundation (Complete)
-FastAPI skeleton, Supabase schema with RLS, Next.js App Router scaffold, Chrome MV3 extension scaffold, auth flows (Supabase + optional Clerk), Zustand store.
+### Competitive landscape
 
-### Phase 2 — Core Intelligence (Complete)
-All 13 agents implemented. Multi-provider LLM gateway. `asyncio.gather()` pipeline coordinator. Pydantic v2 response models. TypedDict annotations on all agents. `try/except Exception` wrapping `call_llm` in every agent.
+| Tool | What it does | Why it's not CourseIntel |
+|------|-------------|--------------------------|
+| **RateMyProfessors** | Professor ratings | No grading schema, no resource discovery, no grade calculator, no action plan |
+| **Syllabi.com / Koofers** | Syllabus archive | No AI extraction, no structured output, no grade tracking |
+| **Notion / Obsidian** | Manual note-taking | Requires student to do all the work; no automation, no orchestration |
+| **Canvas / Gradescope** | LMS gradebook | Shows raw grades only; no weighted calculation, no cross-course view, no advisor |
+| **ChatGPT (manual)** | Paste syllabus → ask questions | Stateless, no course tracking, no extension sync, no grade model, no trend prediction |
+| **LangGraph / CrewAI** | Multi-agent frameworks | Require manual workflow definition; CourseIntel auto-decomposes from a single submission |
 
-### Phase 3 — Polish and Validation (Complete)
-- 18 unit tests for grade math engine
-- 12 async tests for agent fallback resilience (LLM failure → safe empty dict)
-- 29 Jest tests for Chrome extension DOM scrapers (jsdom)
-- Demo fixture: CSC 212 URI with 10 resources, 5 tools, 9 obligations — loads without any API key
-- Agent health check (`GET /health/agents`) + frontend LLM provider badge
-- ICS calendar import on Action Board
+**Why existing solutions can't easily replicate this:** CourseIntel combines (1) automatic multi-agent task decomposition from a single form submission, (2) live grade syncing via Chrome extension with LMS-specific DOM scrapers, (3) deterministic algebraic grade math with linear regression trend prediction, and (4) priority-scheduled obligation management — into one pipeline. Any competitor can build one piece; the integration is the moat.
 
-### Phase 4 — Deployment (Complete)
-`vercel.json` + `render.yaml` for one-click deploy. GitHub Actions keepalive. `CORS_ORIGINS` env var for production allowlist.
+---
+
+## Feasibility
+
+### What's built and verified
+
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| 13 async agents with TypedDict returns | Complete | All agents in `backend/agents/`, TypedDict annotations verified by type checker |
+| Async job queue (background bootstrap) | Complete | `services/job_store.py`, `POST /courses/bootstrap/async` returns job_id |
+| Priority scheduler | Complete | `GET /courses/{id}/obligations/prioritized`, urgency-ranked output |
+| Stale task reaper | Complete | `_reaper_loop()` in `main.py`, 60s interval via `lifespan` |
+| Exponential backoff in LLM gateway | Complete | `agents/base.py`, 3 retries with 1s→2s→4s backoff |
+| Grade math + trend prediction | Complete | `grade_intelligence.py`, 25 unit tests including regression tests |
+| Chrome extension (3 scrapers) | Complete | 29 Jest tests, Manifest V3, Supabase auth handshake |
+| 7 dashboard screens | Complete | Next.js 16 App Router, all screens documented in `docs/SCREENS.md` |
+| CI pipeline | Complete | GitHub Actions: Python pytest, Jest, TypeScript check, Next.js build, Playwright E2E |
+| Production deployment | Complete | Vercel (frontend), Render (backend), Supabase (database) |
+| **Total tests** | **67 Python + 29 TypeScript + Playwright E2E** | All passing in CI |
+
+### Hourly execution log (solo developer)
+
+| Block | Hours | Deliverable |
+|-------|-------|-------------|
+| Foundation (FastAPI, Supabase, Next.js, auth) | 0–4 | Backend skeleton + frontend scaffold + auth flows |
+| Agent pipeline (13 agents, pipeline coordinator) | 4–10 | All agents implemented, bootstrap endpoint working |
+| Grade engine (weighted average, goal solver, trend) | 10–12 | Deterministic math + linear regression |
+| Chrome extension (3 scrapers, service worker) | 12–15 | MV3 extension with Supabase sync |
+| Job queue + priority scheduler + reaper | 15–18 | Async bootstrap, obligation ranking, background reaper |
+| Testing (67 Python + 29 TS + E2E) | 18–21 | Full test suite, CI pipeline |
+| Deployment + documentation | 21–24 | Vercel + Render live, 7 docs files |
+
+---
+
+## Risk Assessment
+
+| Risk | Probability | Impact | Concrete Mitigation |
+|------|------------|--------|-------------------|
+| **LLM API unavailable** (rate limit or outage) | Medium | High | Three-provider fallback chain (OpenAI → Gemini → Groq) + exponential backoff retry (3 attempts, 1s→2s→4s). Pipeline returns partial results — each agent has `try/except` with safe empty default. |
+| **LLM returns malformed JSON** | High (5–15%) | Low | Every agent wraps `call_llm()` + `json.loads()` inside `try/except Exception`. Malformed output → logged warning + typed empty default. Pipeline never crashes. |
+| **Render free tier cold start** (15-min idle sleep) | High | Medium | GitHub Actions keepalive workflow pings `/health` every 10 minutes. First request after cold start adds ~30s latency. |
+| **Chrome extension scraper breakage** (LMS DOM update) | Medium | Medium | 29 Jest tests catch regressions. Selectors target stable CSS classes (`.js-assignmentRow`, not dynamic styles). Generic fallback scraper handles unknown platforms. |
+| **Supabase RLS misconfiguration** | Low | Critical | Single policy pattern (`auth.uid() = user_id`) on all 3 tables. Composite indexes enforce query patterns. Schema in version control (`db/schema.sql`). |
+| **Job store memory leak** (abandoned tasks accumulate) | Low | Medium | Stale task reaper marks `running` jobs as `timed_out` after 5 min, evicts terminal jobs after 24h. `store_size()` metric exposed for monitoring. |
+| **Solo developer scope creep** | Medium | High | Hourly milestones with hard scope boundaries. Fallback: demo mode with pre-bootstrapped fixture (CSC 212 URI) requires zero LLM calls. |
+
+---
+
+## Differentiation Strategy
+
+**One sentence:** CourseIntel is the only system that auto-decomposes a course name into a parallel multi-agent intelligence pipeline — combining syllabus extraction, reputation analysis, resource discovery, grade prediction, and action planning — without requiring the user to define any workflow, connect any API, or upload any document.
+
+**Why this is hard to replicate:**
+
+1. **No workflow definition required.** LangGraph and CrewAI require developers to define agent graphs. CourseIntel's planner generates the execution plan from the task type alone.
+2. **Domain-specific agent specialization.** Each of the 13 agents has a tailored system prompt, model tier assignment, and typed output schema. A general-purpose agent framework can't match this without equal domain investment.
+3. **Deterministic grade math alongside LLM intelligence.** The algebraic grade solver and linear regression trend predictor are provably correct (67 tests). The LLM handles fuzzy intelligence (syllabus parsing, reputation). This hybrid architecture is more reliable than pure-LLM approaches.
+4. **Live data pipeline via Chrome extension.** 3 DOM scrapers with real CSS selectors that sync grades from Gradescope/Canvas/Brightspace into the grade model. This is not scaffolding — 29 Jest tests validate the parsing logic.
 
 ---
 
@@ -336,10 +314,12 @@ All 13 agents implemented. Multi-provider LLM gateway. `asyncio.gather()` pipeli
 | Metric | Value |
 |--------|-------|
 | Backend agents | 13 (7 in bootstrap pipeline + 6 on-demand) |
-| API endpoints | 17 (across 5 routers: courses, grades, study, extension, health) |
+| API endpoints | 18 (courses, grades, study, extension, health routers) |
 | Frontend screens | 7 (setup, profile, grades, goals, study, resources, actions) |
-| Unit tests (Python) | 60 (18 grade math + 12 agent fallbacks + 30 API route tests) |
+| Unit tests (Python) | 67 (25 grade math + 12 agent fallbacks + 30 API route tests) |
 | Unit tests (TypeScript) | 29 (extension DOM scrapers) |
-| LLM providers | 3 (OpenAI, Gemini, Groq — all with free tier options) |
-| LMS platforms supported | 3 (Gradescope, Canvas, Brightspace) + generic fallback |
-| Docs files | 7 (ARCHITECTURE, AGENTS, API, DEPLOYMENT, EXTENSION, SCREENS, MASTER_PLAN) |
+| E2E tests | Playwright (12 screen tests + demo fixture validation) |
+| LLM providers | 3 (OpenAI, Gemini free tier, Groq free tier) |
+| LMS platforms | 3 (Gradescope, Canvas, Brightspace) + generic fallback |
+| Documentation files | 7 (ARCHITECTURE, AGENTS, API, DEPLOYMENT, EXTENSION, SCREENS, MASTER_PLAN) |
+| Deployment | Vercel (frontend) + Render (backend) + Supabase (database) |
