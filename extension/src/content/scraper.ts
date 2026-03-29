@@ -15,23 +15,22 @@
  *   recv  { platform, url, items: ScrapedItem[], rawText }
  */
 
-interface ScrapedItem {
+export interface ScrapedItem {
   title: string;
   due_date: string | null;
   link: string | null;
   type: "assignment" | "exam" | "reading" | "other";
 }
 
-function detectPlatform(): string {
-  const host = window.location.hostname;
-  if (host.includes("gradescope")) return "gradescope";
-  if (host.includes("instructure") || host.includes("canvas")) return "canvas";
-  if (host.includes("brightspace") || host.includes("d2l")) return "brightspace";
-  if (host.includes("edfinity")) return "edfinity";
+export function detectPlatform(hostname: string = window.location.hostname): string {
+  if (hostname.includes("gradescope")) return "gradescope";
+  if (hostname.includes("instructure") || hostname.includes("canvas")) return "canvas";
+  if (hostname.includes("brightspace") || hostname.includes("d2l")) return "brightspace";
+  if (hostname.includes("edfinity")) return "edfinity";
   return "unknown";
 }
 
-function scrapeGradescope(): ScrapedItem[] {
+export function scrapeGradescope(): ScrapedItem[] {
   const items: ScrapedItem[] = [];
   document.querySelectorAll(".js-assignmentRow, .table--assignments tbody tr").forEach((row) => {
     const title = row.querySelector(".assignmentTitle, td:first-child")?.textContent?.trim() ?? "";
@@ -42,7 +41,7 @@ function scrapeGradescope(): ScrapedItem[] {
   return items;
 }
 
-function scrapeCanvas(): ScrapedItem[] {
+export function scrapeCanvas(): ScrapedItem[] {
   const items: ScrapedItem[] = [];
   document.querySelectorAll(".assignment, .ig-row").forEach((el) => {
     const title = el.querySelector(".ig-title, .title")?.textContent?.trim() ?? "";
@@ -53,7 +52,7 @@ function scrapeCanvas(): ScrapedItem[] {
   return items;
 }
 
-function scrapeBrightspace(): ScrapedItem[] {
+export function scrapeBrightspace(): ScrapedItem[] {
   const items: ScrapedItem[] = [];
   // D2L Brightspace: assignments table rows and datalist items
   document.querySelectorAll(".d2l-table tr, .d2l-datalist-item").forEach((el) => {
@@ -68,10 +67,12 @@ function scrapeBrightspace(): ScrapedItem[] {
   return items;
 }
 
-function scrapeGeneric(): ScrapedItem[] {
+export function scrapeGeneric(): ScrapedItem[] {
   // Fallback: look for date-adjacent text patterns
   const items: ScrapedItem[] = [];
-  const datePattern = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}/gi;
+  // No `g` flag — avoids stateful lastIndex when reusing the same regex object
+  // across multiple forEach iterations, which would cause every other match to fail.
+  const datePattern = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}/i;
   document.querySelectorAll("tr, li, .card, .item").forEach((el) => {
     const text = el.textContent ?? "";
     if (datePattern.test(text) && text.length < 300) {
