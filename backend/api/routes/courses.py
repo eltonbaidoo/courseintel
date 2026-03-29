@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from api.deps import get_user_id
 from agents import (
     discovery,
+    obligation_deadline,
     syllabus_acquisition,
     syllabus_intelligence,
     public_resources,
@@ -15,6 +16,7 @@ from db import queries
 from services.pdf_parser import extract_text_from_pdf_bytes
 from config.settings import settings
 from agents.grade_intelligence import compute_current_grade, GradeEntry
+from models.course import BootstrapResponse, ActionPlanResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/courses", tags=["courses"])
@@ -35,7 +37,7 @@ def _sanitize_str(value: str, field: str) -> str:
 
 # ── Bootstrap ────────────────────────────────────────────────────────────────
 
-@router.post("/bootstrap")
+@router.post("/bootstrap", response_model=BootstrapResponse)
 async def bootstrap_course(
     request: Request,
     university: str = Form(...),
@@ -98,6 +100,9 @@ async def bootstrap_course(
         tool_discovery.run(syllabus_text or "", ""),
     )
 
+    raw_deadlines = course_profile.get("key_deadlines", [])
+    normalized_obligations = await obligation_deadline.run(raw_deadlines)
+
     bootstrap_data = {
         "course_identity": course_identity,
         "syllabus_status": syllabus_result,
@@ -105,6 +110,7 @@ async def bootstrap_course(
         "resources": resources_result.get("resources", []),
         "detected_tools": tools_result.get("tools", []),
         "student_signal": reputation_result,
+        "obligations": normalized_obligations.get("obligations", raw_deadlines),
     }
 
     # Persist to database
@@ -160,7 +166,7 @@ async def delete_course(course_id: str, user_id: str = Depends(get_user_id)):
 
 # ── Action Plan (Judgment Agent) ─────────────────────────────────────────────
 
-@router.get("/{course_id}/action-plan")
+@router.get("/{course_id}/action-plan", response_model=ActionPlanResponse)
 async def get_action_plan(
     course_id: str,
     user_id: str = Depends(get_user_id),
@@ -192,8 +198,8 @@ async def get_action_plan(
         ]
         grade_standing = compute_current_grade(grade_entries, categories)
 
-    # Collect obligations from course profile deadlines
-    obligations = course_profile.get("key_deadlines", [])
+    # Collect obligations — prefer normalized output, fall back to raw deadlines
+    obligations = course.get("obligations") or course_profile.get("key_deadlines", [])
 
     # Missing data flags
     missing_flags = []

@@ -1,6 +1,9 @@
 declare const __APP_URL__: string;
 const APP_URL: string = (typeof __APP_URL__ !== "undefined" ? __APP_URL__ : "http://localhost:3000").replace(/\/$/, "");
 
+declare const __API_URL__: string;
+const API_URL: string = (typeof __API_URL__ !== "undefined" ? __API_URL__ : "http://localhost:8000").replace(/\/$/, "");
+
 const captureBtn = document.getElementById("capture-btn") as HTMLButtonElement;
 const courseSelect = document.getElementById("course-select") as HTMLSelectElement;
 const resultDiv = document.getElementById("result") as HTMLDivElement;
@@ -37,12 +40,26 @@ async function init() {
     platformBadge.style.color = "#a16207";
   }
 
-  // TODO: load courses from Supabase and populate courseSelect
-  const option = document.createElement("option");
-  option.value = "demo-course-id";
-  option.textContent = "CS 4400, Georgia Tech";
-  courseSelect.appendChild(option);
-  courseSelect.value = "demo-course-id";
+  const { authToken } = await chrome.storage.local.get("authToken");
+  if (authToken) {
+    try {
+      const res = await fetch(`${API_URL}/courses/`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json() as { courses: Array<{ id: string; course_name: string; university: string }> };
+        for (const c of data.courses ?? []) {
+          const option = document.createElement("option");
+          option.value = c.id;
+          option.textContent = `${c.course_name} — ${c.university}`;
+          courseSelect.appendChild(option);
+        }
+        if (data.courses?.length) courseSelect.value = data.courses[0].id;
+      }
+    } catch {
+      // network failure — select stays empty, capture is gated on courseId check below
+    }
+  }
 }
 
 captureBtn.addEventListener("click", async () => {

@@ -27,7 +27,9 @@ async def run(course: str, professor: str, university: str) -> dict:
     results = await search_for_reputation(course, professor, university)
     if not results:
         return {"summary": "No public signal found.", "confidence": 0.0}
-    context = "\n".join(f"- {r['title']}\n  {r.get('content','')[:400]}" for r in results)
+    context = "\n".join(
+        f"- {r.get('title', '')}\n  {str(r.get('content', ''))[:400]}" for r in results
+    )
     prompt = f"Course: {course}\nProfessor: {professor}\nUniversity: {university}\n\nSources:\n{context}"
     raw = await call_claude(SYSTEM, prompt, model=SONNET)
     try:

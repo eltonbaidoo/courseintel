@@ -1,6 +1,6 @@
 import useSWR from "swr";
 import { api } from "@/lib/api";
-import { useAppStore } from "@/stores/app-store";
+import { EMPTY_GRADE_ENTRIES, useAppStore } from "@/stores/app-store";
 import type { GradeEntry, GradeEntryPayload, ComputeGradeResponse } from "@/types/grades";
 import type { GradingCategory } from "@/types/course";
 
@@ -20,7 +20,8 @@ export function useComputeGrade(
   courseId: string,
   categories: GradingCategory[],
 ) {
-  const entries = useAppStore((s) => s.gradeEntries[courseId] ?? []);
+  const entriesRaw = useAppStore((s) => s.gradeEntries[courseId]);
+  const entries = entriesRaw ?? EMPTY_GRADE_ENTRIES;
   const categoryMap = Object.fromEntries(categories.map((c) => [c.name, c.weight]));
 
   return useSWR<ComputeGradeResponse>(

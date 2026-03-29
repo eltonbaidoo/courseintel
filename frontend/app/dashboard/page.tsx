@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCourses } from "@/hooks/use-course";
-import { useAppStore } from "@/stores/app-store";
+import { EMPTY_GRADE_ENTRIES, useAppStore } from "@/stores/app-store";
 import { GradeBar } from "@/components/ui/GradeBar";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -19,7 +19,8 @@ function gradeRisk(pct: number | null): "low" | "medium" | "high" {
 }
 
 function CourseCard({ course }: { course: Course }) {
-  const entries = useAppStore((s) => s.gradeEntries[course.id] ?? []);
+  const entriesRaw = useAppStore((s) => s.gradeEntries[course.id]);
+  const entries = entriesRaw ?? EMPTY_GRADE_ENTRIES;
   let grade: number | null = null;
   if (entries.length > 0) {
     let earned = 0;

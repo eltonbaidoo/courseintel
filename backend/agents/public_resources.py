@@ -17,7 +17,10 @@ Return only valid JSON with key "resources".
 
 async def run(course: str, university: str, topics: list[str]) -> dict:
     results = await search_for_course_resources(course, university, topics)
-    context = "\n".join(f"- {r['title']}: {r['url']}\n  {r.get('content','')[:300]}" for r in results)
+    context = "\n".join(
+        f"- {r.get('title', '')}: {r.get('url', '')}\n  {str(r.get('content', ''))[:300]}"
+        for r in results
+    )
     prompt = f"Course: {course} at {university}\nTopics: {', '.join(topics)}\n\nResults:\n{context}"
     raw = await call_claude(SYSTEM, prompt, model=HAIKU)
     try:

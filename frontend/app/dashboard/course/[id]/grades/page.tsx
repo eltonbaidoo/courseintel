@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import { useCourse } from "@/hooks/use-course";
-import { useAppStore } from "@/stores/app-store";
+import { EMPTY_GRADE_ENTRIES, useAppStore } from "@/stores/app-store";
 import { useComputeGrade } from "@/hooks/use-grades";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { api } from "@/lib/api";
@@ -38,7 +38,8 @@ function barColor(pct: number) {
 export default function GradesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const course = useCourse(id);
-  const entries = useAppStore((s) => s.gradeEntries[id] ?? []);
+  const entriesRaw = useAppStore((s) => s.gradeEntries[id]);
+  const entries = entriesRaw ?? EMPTY_GRADE_ENTRIES;
   const addGradeEntry = useAppStore((s) => s.addGradeEntry);
   const removeGradeEntry = useAppStore((s) => s.removeGradeEntry);
   const [saving, setSaving] = useState(false);
