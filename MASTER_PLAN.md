@@ -163,6 +163,52 @@ Three DOM scrapers with real CSS selectors, validated by **29 Jest unit tests** 
 
 ---
 
+## Background Job Queue & Priority Scheduler
+
+### Async Bootstrap (non-blocking)
+
+The bootstrap pipeline can be triggered in two modes:
+
+```
+POST /courses/bootstrap        → blocks ~35-45s, returns BootstrapResponse
+POST /courses/bootstrap/async  → returns immediately (HTTP 202) with job_id
+GET  /courses/jobs/{job_id}    → poll for status + result
+```
+
+**Job lifecycle:**
+```
+pending → running → completed
+                  → failed
+                  → timed_out  (set by reaper if still running after 5 min)
+```
+
+The job store (`services/job_store.py`) is an `asyncio.Lock`-protected in-memory dict — safe for concurrent access in a single uvicorn process. Upgrade path: replace `_store` with Redis `HSET` calls for multi-worker deployments.
+
+### Priority Scheduler
+
+```
+GET /courses/{id}/obligations/prioritized
+```
+
+Returns a course's obligations ranked by urgency level assigned by `ObligationDeadlineAgent`:
+
+| Urgency Level | Priority Score |
+|--------------|---------------|
+| critical | 4 — surfaces first |
+| high | 3 |
+| medium | 2 |
+| low | 1 — surfaces last |
+
+### Stale Task Reaper
+
+A background asyncio task runs every 60 seconds on startup (registered via FastAPI `lifespan`). It:
+1. Marks any job still in `running` state after 5 minutes as `timed_out`
+2. Evicts terminal jobs (completed/failed/timed_out) older than 24 hours
+
+This prevents memory leaks from abandoned jobs and surfaces hung tasks to clients polling the status endpoint.
+
+---
+
 ## Scalability Design
 
 ### Current (hackathon scope)
@@ -290,10 +336,10 @@ All 13 agents implemented. Multi-provider LLM gateway. `asyncio.gather()` pipeli
 | Metric | Value |
 |--------|-------|
 | Backend agents | 13 (7 in bootstrap pipeline + 6 on-demand) |
-| API endpoints | 14 (across 5 routers: courses, grades, study, extension, health) |
+| API endpoints | 17 (across 5 routers: courses, grades, study, extension, health) |
 | Frontend screens | 7 (setup, profile, grades, goals, study, resources, actions) |
-| Unit tests (Python) | 30 (18 grade math + 12 agent fallbacks) |
+| Unit tests (Python) | 60 (18 grade math + 12 agent fallbacks + 30 API route tests) |
 | Unit tests (TypeScript) | 29 (extension DOM scrapers) |
 | LLM providers | 3 (OpenAI, Gemini, Groq — all with free tier options) |
 | LMS platforms supported | 3 (Gradescope, Canvas, Brightspace) + generic fallback |
-| Docs files | 6 (ARCHITECTURE, AGENTS, API, DEPLOYMENT, EXTENSION, MASTER_PLAN) |
+| Docs files | 7 (ARCHITECTURE, AGENTS, API, DEPLOYMENT, EXTENSION, SCREENS, MASTER_PLAN) |

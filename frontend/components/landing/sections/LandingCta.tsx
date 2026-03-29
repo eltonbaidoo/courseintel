@@ -27,7 +27,7 @@ export function LandingCta() {
               <ArrowRight className="h-5 w-5" aria-hidden />
             </EarlyAccessButton>
             <Link
-              href="/login"
+              href="/demo"
               className="inline-flex h-14 items-center gap-2 rounded-full border border-espresso-700 px-8 text-base font-medium text-almond-cream-300 transition-all duration-200 ease-out hover:border-burnt-peach-500/40 hover:text-almond-cream-50"
             >
               <PlayCircle className="h-5 w-5 text-burnt-peach-400" aria-hidden />

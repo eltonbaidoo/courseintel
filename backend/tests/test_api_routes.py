@@ -6,13 +6,16 @@ without a running server. The dev-auth bypass is enabled via environment
 variables so no real Supabase JWT is required.
 
 Coverage:
-  GET  /health             — liveness check
-  GET  /health/llm         — LLM status (token gated)
-  POST /grades/compute     — weighted grade calculation (stateless)
-  POST /grades/goal-simulator — required score solver (stateless)
-  POST /grades/courses/{id}/entries — grade CRUD (auth required)
-  GET  /grades/courses/{id}/entries — list grade entries (auth required)
-  POST /extension/scrape   — extension scrape validation (auth required)
+  GET  /health                              — liveness check
+  GET  /health/llm                          — LLM status (token gated)
+  POST /courses/bootstrap/async             — non-blocking bootstrap (job queue)
+  GET  /courses/jobs/{id}                   — job status polling
+  GET  /courses/{id}/obligations/prioritized — priority-sorted obligations
+  POST /grades/compute                      — weighted grade calculation (stateless)
+  POST /grades/goal-simulator               — required score solver (stateless)
+  POST /grades/courses/{id}/entries         — grade CRUD (auth required)
+  GET  /grades/courses/{id}/entries         — list grade entries (auth required)
+  POST /extension/scrape                    — extension scrape validation (auth required)
 """
 import os
 import pytest
@@ -316,3 +319,153 @@ def test_extension_scrape_with_valid_items():
     assert data["accepted_items"] == 2
     assert data["usefulness_score"] == 0.9
     assert "scrape_job_id" in data
+
+
+# ── Async bootstrap job queue ────────────────────────────────────────────────
+
+def test_async_bootstrap_requires_auth():
+    """POST /courses/bootstrap/async without auth returns 401/403."""
+    res = client.post(
+        "/courses/bootstrap/async",
+        data={"university": "URI", "course": "CSC 212"},
+    )
+    assert res.status_code in (401, 403, 422)
+
+
+def test_async_bootstrap_returns_job_id():
+    """POST /courses/bootstrap/async with auth returns 202 + job_id."""
+    # Patch the background task runner so no real LLM calls are made
+    with patch("api.routes.courses._run_bootstrap_job"):
+        res = client.post(
+            "/courses/bootstrap/async",
+            headers=AUTH,
+            data={"university": "URI", "course": "CSC 212"},
+        )
+    assert res.status_code == 202
+    data = res.json()
+    assert "job_id" in data
+    assert data["status"] == "pending"
+    assert "poll_url" in data
+
+
+def test_job_status_not_found():
+    """GET /courses/jobs/{id} returns 404 for unknown job."""
+    res = client.get("/courses/jobs/nonexistent-job-id", headers=AUTH)
+    assert res.status_code == 404
+
+
+def test_job_status_pending():
+    """A freshly created job starts with status pending."""
+    import asyncio
+    from services import job_store as js
+
+    # Create a job directly in the store and check the status endpoint
+    job_id = asyncio.get_event_loop().run_until_complete(
+        js.create_job({"university": "URI", "course": "CSC 212"})
+    )
+    res = client.get(f"/courses/jobs/{job_id}", headers=AUTH)
+    assert res.status_code == 200
+    assert res.json()["status"] == "pending"
+
+
+def test_job_status_completed_includes_result():
+    """A completed job exposes its result in the response."""
+    import asyncio
+    from services import job_store as js
+
+    job_id = asyncio.get_event_loop().run_until_complete(js.create_job())
+    asyncio.get_event_loop().run_until_complete(
+        js.update_job(job_id, status="completed", result={"id": "course-1"})
+    )
+    res = client.get(f"/courses/jobs/{job_id}", headers=AUTH)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "completed"
+    assert data["result"]["id"] == "course-1"
+
+
+def test_job_status_failed_includes_error():
+    """A failed job exposes its error message."""
+    import asyncio
+    from services import job_store as js
+
+    job_id = asyncio.get_event_loop().run_until_complete(js.create_job())
+    asyncio.get_event_loop().run_until_complete(
+        js.update_job(job_id, status="failed", error="LLM unavailable")
+    )
+    res = client.get(f"/courses/jobs/{job_id}", headers=AUTH)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "failed"
+    assert "LLM unavailable" in data["error"]
+
+
+# ── Priority-sorted obligations ──────────────────────────────────────────────
+
+def test_prioritized_obligations_not_found():
+    """GET /courses/{id}/obligations/prioritized returns 404 for unknown course."""
+    with patch("api.routes.courses.queries.get_course", return_value=None):
+        res = client.get("/courses/fake-id/obligations/prioritized", headers=AUTH)
+    assert res.status_code == 404
+
+
+def test_prioritized_obligations_sorted():
+    """Obligations are returned sorted critical → high → medium → low."""
+    mock_course = {
+        "id": "course-1",
+        "user_id": "courseintel-dev-local",
+        "obligations": [
+            {"title": "HW3", "urgency": "low"},
+            {"title": "Final Exam", "urgency": "critical"},
+            {"title": "Project Milestone", "urgency": "high"},
+            {"title": "Quiz", "urgency": "medium"},
+        ],
+        "course_profile": {},
+    }
+    with patch("api.routes.courses.queries.get_course", return_value=mock_course):
+        res = client.get("/courses/course-1/obligations/prioritized", headers=AUTH)
+    assert res.status_code == 200
+    data = res.json()
+    titles = [ob["title"] for ob in data["obligations"]]
+    assert titles[0] == "Final Exam"       # critical first
+    assert titles[-1] == "HW3"            # low last
+    assert data["count"] == 4
+
+
+def test_prioritized_obligations_empty():
+    """Course with no obligations returns empty list, not error."""
+    mock_course = {
+        "id": "course-1",
+        "user_id": "courseintel-dev-local",
+        "obligations": [],
+        "course_profile": {},
+    }
+    with patch("api.routes.courses.queries.get_course", return_value=mock_course):
+        res = client.get("/courses/course-1/obligations/prioritized", headers=AUTH)
+    assert res.status_code == 200
+    assert res.json()["obligations"] == []
+
+
+# ── Stale job reaper unit test ────────────────────────────────────────────────
+
+def test_reap_stale_jobs():
+    """Jobs running longer than STALE_THRESHOLD are marked timed_out."""
+    import asyncio
+    import time
+    from services import job_store as js
+    from services.job_store import STALE_THRESHOLD_SECONDS
+
+    async def _run():
+        job_id = await js.create_job()
+        # Manually set status to running and backdate updated_at
+        await js.update_job(job_id, status="running")
+        job = await js.get_job(job_id)
+        # Simulate a hung job by backdating updated_at
+        from services import job_store as _js
+        _js._store[job_id]["updated_at"] = time.time() - (STALE_THRESHOLD_SECONDS + 10)
+        reaped = await js.reap_stale_jobs()
+        assert reaped >= 1
+        updated = await js.get_job(job_id)
+        assert updated["status"] == "timed_out"
+
+    asyncio.get_event_loop().run_until_complete(_run())

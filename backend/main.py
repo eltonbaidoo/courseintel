@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -9,6 +11,7 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from config.settings import settings
 from api.routes import courses, grades, extension, auth, health, study
+from services import job_store
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,6 +49,36 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 # ---------------------------------------------------------------------------
+# Stale job reaper — runs every 60 s in the background
+# ---------------------------------------------------------------------------
+async def _reaper_loop() -> None:
+    """Periodic task: mark hung bootstrap jobs as timed_out, evict old records."""
+    while True:
+        try:
+            await asyncio.sleep(60)
+            reaped = await job_store.reap_stale_jobs()
+            if reaped:
+                logger.info("Job reaper: marked %d stale job(s) as timed_out", reaped)
+        except asyncio.CancelledError:
+            break
+        except Exception as exc:
+            logger.warning("Job reaper error (non-fatal): %s", exc)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    reaper = asyncio.create_task(_reaper_loop())
+    logger.info("Job reaper started")
+    yield
+    reaper.cancel()
+    try:
+        await reaper
+    except asyncio.CancelledError:
+        pass
+    logger.info("Job reaper stopped")
+
+
+# ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
 app = FastAPI(
@@ -54,6 +87,7 @@ app = FastAPI(
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
+    lifespan=lifespan,
 )
 
 app.state.limiter = limiter

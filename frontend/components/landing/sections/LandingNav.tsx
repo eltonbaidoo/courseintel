@@ -43,6 +43,20 @@ export function LandingNav() {
           ))}
         </nav>
 
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="hidden rounded-full px-4 py-2 text-sm font-medium text-almond-cream-400 transition-colors duration-200 ease-out hover:text-almond-cream-100 md:inline-flex"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/login?mode=signup"
+            className="inline-flex h-9 items-center rounded-full bg-burnt-peach-500 px-4 text-sm font-semibold text-almond-cream-50 transition-all duration-200 ease-out hover:bg-burnt-peach-600"
+          >
+            Get started
+          </Link>
+        </div>
       </div>
     </header>
   );
