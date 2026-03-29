@@ -21,7 +21,9 @@ action plan.
 | Resource Hub | `/dashboard/course/[id]/resources` | Detected platforms (confidence %), public resources (GitHub, open courseware, Reddit), extension Connect buttons. |
 | Action Board | `/dashboard/course/[id]/actions` | JudgmentAgent output: risk level, focus note, up to 5 weekly actions with priority + rationale. |
 
-**Chrome Extension:** One-click grade import from Gradescope, Canvas, Blackboard, D2L Brightspace, Schoology, Google Classroom, and more. Validated by `ExtensionValidationAgent` before merging into the grade model.
+**Chrome Extension:** Grade import from Gradescope, Canvas, and Brightspace/D2L — 3 DOM scrapers with real CSS selectors, validated by 29 Jest unit tests running in jsdom. `ExtensionValidationAgent` cross-checks scraped items against the course syllabus schema before merging.
+
+**Test Coverage:** 67 Python tests (grade math, agent fallbacks, API routes) + 29 TypeScript tests (extension scrapers) + Playwright E2E tests across 7 dashboard screens.
 
 ---
 
@@ -52,8 +54,14 @@ action plan.
 │  ├── JudgmentAgent (GPT-4o — risk level + action plan)          │
 │  └── ObligationDeadlineAgent (urgency ranking)                  │
 │                                                                 │
-│  Grade Math: deterministic Python (no LLM)                      │
-│  compute_current_grade() · compute_required_scores()            │
+│  Grade Math Engine: deterministic Python (no LLM)               │
+│  compute_current_grade()   — weighted average                   │
+│  compute_required_scores() — algebraic goal solver              │
+│  compute_grade_trend()     — linear regression + projection     │
+│                                                                 │
+│  Async Job Queue: POST /courses/bootstrap/async → job_id        │
+│  Priority Scheduler: GET /courses/{id}/obligations/prioritized  │
+│  Stale Task Reaper: asyncio background loop (60s interval)      │
 └───────────────────────────┬─────────────────────────────────────┘
                             │ Supabase JS / service key
 ┌───────────────────────────▼─────────────────────────────────────┐
