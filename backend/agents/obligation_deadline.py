@@ -3,7 +3,22 @@ Obligation & Deadline Agent
 Normalizes, deduplicates, and ranks all obligations from all sources.
 """
 import json
+from typing import TypedDict
 from agents.base import call_llm as call_claude, HAIKU
+
+
+class _ObligationItem(TypedDict):
+    title: str
+    due_date: str | None
+    source: str
+    type: str
+    urgency: str
+    conflict_note: str | None
+
+
+class ObligationResult(TypedDict):
+    obligations: list[_ObligationItem]
+
 
 SYSTEM = """
 You are the Obligation & Deadline Agent.
@@ -16,7 +31,7 @@ Return only valid JSON.
 """
 
 
-async def run(obligations: list[dict]) -> dict:
+async def run(obligations: list[dict]) -> ObligationResult:
     prompt = f"Obligations from all sources:\n{json.dumps(obligations, indent=2)}"
     raw = await call_claude(SYSTEM, prompt, model=HAIKU, max_tokens=4096)
     try:

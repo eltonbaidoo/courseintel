@@ -1,0 +1,9 @@
+name: Keep Backend Alive
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -s ${{ secrets.BACKEND_URL }}/health

@@ -25,6 +25,7 @@ def create_course(user_id: str, data: dict) -> dict:
         "resources": data.get("resources", []),
         "detected_tools": data.get("detected_tools", []),
         "student_signal": data.get("student_signal", {}),
+        "obligations": data.get("obligations", []),
     }
     result = db.table("courses").insert(row).execute()
     return result.data[0]
