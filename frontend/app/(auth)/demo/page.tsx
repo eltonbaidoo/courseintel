@@ -4,6 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useAppStore } from "@/stores/app-store";
+import {
+  devCredentialsMatch,
+  devSessionEmail,
+  DEV_USER_ID,
+  setDevSessionClient,
+} from "@/lib/dev-auth";
+import { isClerkAuthEnabled } from "@/lib/auth-config";
 import {
   DEMO_DISPLAY_NAME_KEY,
   DEMO_FLOW_KEY,
@@ -14,6 +22,7 @@ type Step = "welcome" | "name" | "auth";
 
 export default function DemoPage() {
   const router = useRouter();
+  const setUser = useAppStore((s) => s.setUser);
   const [step, setStep] = useState<Step>("welcome");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -50,12 +59,22 @@ export default function DemoPage() {
         ? sessionStorage.getItem(DEMO_DISPLAY_NAME_KEY) ?? displayName.trim()
         : displayName.trim();
 
-    const { error: authError } = await supabase.auth.signUp({
+    if (devCredentialsMatch(email, password)) {
+      await supabase.auth.signOut();
+      setDevSessionClient();
+      setUser({ id: DEV_USER_ID, email: devSessionEmail() });
+      router.push("/dashboard");
+      setLoading(false);
+      return;
+    }
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: name, display_name: name },
-        emailRedirectTo: undefined,
+        emailRedirectTo: origin ? `${origin}/dashboard` : undefined,
       },
     });
 
@@ -65,9 +84,14 @@ export default function DemoPage() {
       return;
     }
 
-    router.push(
-      `/verify?email=${encodeURIComponent(email)}&demo=1`,
-    );
+    if (data.session) {
+      router.push("/dashboard");
+      setLoading(false);
+      return;
+    }
+
+    router.push(`/verify?email=${encodeURIComponent(email)}&demo=1`);
+    setLoading(false);
   }
 
   return (
@@ -180,7 +204,36 @@ export default function DemoPage() {
         </>
       )}
 
-      {step === "auth" && (
+      {step === "auth" && isClerkAuthEnabled() && (
+        <>
+          <div className="space-y-2 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-burnt-peach-500/15">
+              <KeyRound className="h-6 w-6 text-almond-cream-400" />
+            </div>
+            <h1 className="font-display text-xl font-bold text-almond-cream-50">
+              Sign in to continue
+            </h1>
+            <p className="text-sm text-almond-cream-400/80">
+              Authentication runs through Clerk (Google, email link, password—whatever you enable in the Clerk dashboard).
+            </p>
+          </div>
+          <Link
+            href="/login?next=/dashboard&from=demo"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-burnt-peach-500 px-5 py-3.5 font-display text-sm font-semibold text-almond-cream-50 transition-colors hover:bg-burnt-peach-600"
+          >
+            Open sign in
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/signup"
+            className="block text-center text-sm text-almond-cream-400 underline-offset-2 hover:text-almond-cream-200 hover:underline"
+          >
+            Need an account? Create one
+          </Link>
+        </>
+      )}
+
+      {step === "auth" && !isClerkAuthEnabled() && (
         <>
           <div className="space-y-2 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-burnt-peach-500/15">

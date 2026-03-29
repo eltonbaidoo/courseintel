@@ -13,6 +13,8 @@ import {
   DEV_USER_ID,
   setDevSessionClient,
 } from "@/lib/dev-auth";
+import { isClerkAuthEnabled } from "@/lib/auth-config";
+import { ClerkAuthPanels } from "@/components/auth/ClerkAuthPanels";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -564,7 +566,16 @@ function LoginForm({ nextPath, fromDemo }: { nextPath: string; fromDemo: boolean
       return;
     }
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    if (authError) { setError(authError.message); setLoading(false); return; }
+    if (authError) {
+      const msg = authError.message;
+      setError(
+        /confirm|verified|not confirmed/i.test(msg)
+          ? `${msg} Check your inbox for a confirmation link, or use “Skip verification” on the verify page in local dev.`
+          : msg,
+      );
+      setLoading(false);
+      return;
+    }
     router.push(nextPath);
   }
 
@@ -621,6 +632,7 @@ function LoginForm({ nextPath, fromDemo }: { nextPath: string; fromDemo: boolean
 
 function SignupForm() {
   const router = useRouter();
+  const setUser = useAppStore((s) => s.setUser);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -634,9 +646,35 @@ function SignupForm() {
     if (password !== confirmPassword) { setError("Passwords do not match."); return; }
     setError(null);
     setLoading(true);
-    const { error: authError } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: undefined } });
+
+    if (devCredentialsMatch(email, password)) {
+      await supabase.auth.signOut();
+      setDevSessionClient();
+      setUser({ id: DEV_USER_ID, email: devSessionEmail() });
+      router.push("/dashboard");
+      setLoading(false);
+      return;
+    }
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: origin ? `${origin}/dashboard` : undefined,
+      },
+    });
     if (authError) { setError(authError.message); setLoading(false); return; }
+
+    // If "Confirm email" is off in Supabase, you get a session immediately — no OTP step.
+    if (data.session) {
+      router.push("/dashboard");
+      setLoading(false);
+      return;
+    }
+
     router.push(`/verify?email=${encodeURIComponent(email)}`);
+    setLoading(false);
   }
 
   return (
@@ -702,6 +740,7 @@ function safeNext(raw: string | null): string {
 }
 
 function AuthPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = safeNext(searchParams.get("next"));
   const fromDemo = searchParams.get("from") === "demo";
@@ -709,6 +748,23 @@ function AuthPage() {
 
   const [mode, setMode] = useState<"login" | "signup">(defaultMode);
   const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    if (isClerkAuthEnabled() && searchParams.get("mode") === "signup") {
+      router.replace("/signup");
+    }
+  }, [router, searchParams]);
+
+  if (isClerkAuthEnabled()) {
+    if (searchParams.get("mode") === "signup") {
+      return (
+        <div className="flex h-screen items-center justify-center bg-shadow-grey-950">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-burnt-peach-500 border-t-transparent" />
+        </div>
+      );
+    }
+    return <ClerkAuthPanels mode="login" />;
+  }
 
   function switchMode(next: "login" | "signup") {
     if (next === mode || animating) return;
