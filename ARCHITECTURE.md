@@ -28,12 +28,16 @@ CourseIntel is a three-layer system: a Chrome extension scrapes live grade data 
 ┌─────────────────────────────▼────────────────────────────────────────┐
 │  FASTAPI BACKEND (Python 3.11)                                       │
 │                                                                      │
-│  api/routes/courses.py   — bootstrap pipeline coordinator            │
-│  api/routes/grades.py    — grade CRUD + computation                  │
+│  api/routes/courses.py   — bootstrap (sync + SSE stream + async job) │
+│  api/routes/grades.py    — grade CRUD + computation + trend          │
 │  api/routes/study.py     — material upload + AI analysis             │
 │  api/routes/extension.py — scrape validation + orchestration         │
+│  api/routes/health.py    — liveness + agent ping + cache metrics     │
 │  api/deps.py             — JWT auth dependency (Supabase + Clerk)    │
 │  agents/                 — 13 specialized agents (see AGENTS.md)     │
+│  agents/base.py          — LLM gateway: retry + SHA-256 cache        │
+│  services/llm_cache.py   — in-memory LLM response cache (TTL=1h)    │
+│  services/job_store.py   — async job queue (pending→running→done)    │
 │  services/pdf_parser.py  — PDF text extraction                       │
 │  db/queries.py           — Supabase database access layer            │
 └─────────────────────────────┬────────────────────────────────────────┘
