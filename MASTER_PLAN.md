@@ -292,8 +292,8 @@ All 13 agents implemented. Multi-provider LLM gateway. `asyncio.gather()` pipeli
 | Backend agents | 13 (7 in bootstrap pipeline + 6 on-demand) |
 | API endpoints | 14 (across 5 routers: courses, grades, study, extension, health) |
 | Frontend screens | 7 (setup, profile, grades, goals, study, resources, actions) |
-| Unit tests (Python) | 30 (18 grade math + 12 agent fallbacks) |
+| Unit tests (Python) | 50 (18 grade math + 12 agent fallbacks + 20 API route tests) |
 | Unit tests (TypeScript) | 29 (extension DOM scrapers) |
 | LLM providers | 3 (OpenAI, Gemini, Groq — all with free tier options) |
 | LMS platforms supported | 3 (Gradescope, Canvas, Brightspace) + generic fallback |
-| Docs files | 6 (ARCHITECTURE, AGENTS, API, DEPLOYMENT, EXTENSION, MASTER_PLAN) |
+| Docs files | 7 (ARCHITECTURE, AGENTS, API, DEPLOYMENT, EXTENSION, SCREENS, MASTER_PLAN) |
