@@ -12,7 +12,13 @@ Model tiers used by agents:
   OPUS   → best reasoning  (Judgment, Syllabus Intelligence)
   SONNET → balanced        (Reputation, Study Context)
   HAIKU  → fast/cheap      (all other agents)
+
+Retry policy:
+  Transient errors (rate-limit 429, server 5xx, network) are retried with
+  exponential backoff: 1s → 2s → 4s (3 attempts total).  Permanent errors
+  (auth 401, bad request 400) are re-raised immediately.
 """
+import asyncio
 import logging
 from config.settings import settings
 
@@ -42,6 +48,20 @@ _OPENAI_TO_GEMINI = {
     "gpt-4o": _GEMINI_OPUS,
     "gpt-4o-mini": _GEMINI_HAIKU,
 }
+
+# ── Retry configuration ───────────────────────────────────────────────────────
+_MAX_RETRIES = 3
+_BASE_BACKOFF = 1.0  # seconds; doubles each attempt
+
+
+def _is_transient(exc: Exception) -> bool:
+    """Return True if the error is likely transient and worth retrying."""
+    msg = str(exc).lower()
+    # Rate limits, server errors, and network errors are transient
+    transient_signals = ("rate limit", "429", "503", "502", "500", "timeout",
+                         "connection", "server error", "overloaded")
+    return any(s in msg for s in transient_signals)
+
 
 # ── Lazy-init clients ─────────────────────────────────────────────────────────
 _openai_client = None
@@ -77,25 +97,52 @@ async def call_llm(
     thinking: bool = False,
 ) -> str:
     """
-    Call the configured LLM provider.
-    Priority: OpenAI → Gemini → Groq. `thinking` is unused (API compatibility).
+    Call the configured LLM provider with exponential-backoff retry.
+
+    Attempts up to _MAX_RETRIES times for transient errors (rate-limit,
+    server 5xx, network).  Permanent errors (auth, bad request) fail fast.
+    Priority: OpenAI → Gemini → Groq.
     """
     _ = thinking
 
-    if settings.openai_api_key:
-        return await _call_provider(_get_openai(), model, system, user, max_tokens)
+    for attempt in range(1, _MAX_RETRIES + 1):
+        try:
+            if settings.openai_api_key:
+                return await _call_provider(_get_openai(), model, system, user, max_tokens)
 
-    if settings.gemini_api_key:
-        gem_name = _OPENAI_TO_GEMINI.get(model, _GEMINI_HAIKU)
-        return await _call_gemini(system, user, gem_name, max_tokens)
+            if settings.gemini_api_key:
+                gem_name = _OPENAI_TO_GEMINI.get(model, _GEMINI_HAIKU)
+                return await _call_gemini(system, user, gem_name, max_tokens)
 
-    if settings.groq_api_key:
-        groq_model = _OPENAI_TO_GROQ.get(model, _GROQ_HAIKU)
-        return await _call_provider(_get_groq(), groq_model, system, user, max_tokens)
+            if settings.groq_api_key:
+                groq_model = _OPENAI_TO_GROQ.get(model, _GROQ_HAIKU)
+                return await _call_provider(_get_groq(), groq_model, system, user, max_tokens)
 
-    raise RuntimeError(
-        "No LLM configured. Set OPENAI_API_KEY, GEMINI_API_KEY, or GROQ_API_KEY in backend/.env"
-    )
+            raise RuntimeError(
+                "No LLM configured. Set OPENAI_API_KEY, GEMINI_API_KEY, or GROQ_API_KEY in backend/.env"
+            )
+
+        except RuntimeError:
+            # No key configured — not transient, fail immediately
+            raise
+
+        except Exception as exc:
+            if attempt == _MAX_RETRIES or not _is_transient(exc):
+                logger.error(
+                    "LLM call failed after %d attempt(s) (model=%s): %s",
+                    attempt, model, exc,
+                )
+                raise
+
+            backoff = _BASE_BACKOFF * (2 ** (attempt - 1))
+            logger.warning(
+                "LLM transient error (attempt %d/%d, model=%s), retrying in %.1fs: %s",
+                attempt, _MAX_RETRIES, model, backoff, exc,
+            )
+            await asyncio.sleep(backoff)
+
+    # Should never reach here — loop always raises or returns
+    raise RuntimeError("LLM retry loop exited unexpectedly")
 
 
 async def _call_provider(client, model: str, system: str, user: str, max_tokens: int) -> str:
