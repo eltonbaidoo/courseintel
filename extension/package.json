@@ -4,10 +4,16 @@
   "private": true,
   "scripts": {
     "build": "tsc && node scripts/copy-static.js",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "@types/chrome": "^0.0.299"
+    "@types/chrome": "^0.0.299",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5"
   }
 }

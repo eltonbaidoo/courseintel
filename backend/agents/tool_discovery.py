@@ -3,7 +3,24 @@ Third-Party Tool Discovery Agent
 Identifies platforms and apps required by the course.
 """
 import json
+import logging
+from typing import TypedDict
 from agents.base import call_llm as call_claude, HAIKU
+
+logger = logging.getLogger(__name__)
+
+
+class ToolItem(TypedDict):
+    tool_name: str
+    evidence: str
+    purpose: str
+    confidence: float
+    integration_type: str
+
+
+class ToolDiscoveryResult(TypedDict):
+    tools: list[ToolItem]
+
 
 KNOWN_PLATFORMS = [
     "Gradescope", "Canvas", "Brightspace", "Blackboard", "Moodle",
@@ -25,7 +42,7 @@ Return only valid JSON with key "tools".
 """
 
 
-async def run(syllabus_text: str, course_page_text: str = "") -> dict:
+async def run(syllabus_text: str, course_page_text: str = "") -> ToolDiscoveryResult:
     known = ", ".join(KNOWN_PLATFORMS)
     prompt = f"""
 Known platforms to watch for: {known}
@@ -36,8 +53,9 @@ Syllabus:
 Course page context:
 {course_page_text[:5000]}
 """
-    raw = await call_claude(SYSTEM, prompt, model=HAIKU)
     try:
+        raw = await call_claude(SYSTEM, prompt, model=HAIKU)
         return json.loads(raw)
-    except json.JSONDecodeError:
+    except Exception as exc:
+        logger.warning("ToolDiscoveryAgent failed: %s", exc)
         return {"tools": []}

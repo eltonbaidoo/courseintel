@@ -3,9 +3,12 @@ Syllabus Acquisition Agent
 Finds a syllabus from public web sources or flags that one is needed.
 """
 import json
+import logging
 from agents.base import call_llm as call_claude, HAIKU
 from services.search import search_for_syllabus
 from services.pdf_parser import extract_text_from_pdf_url
+
+logger = logging.getLogger(__name__)
 
 SYSTEM = """
 You are the Syllabus Acquisition Agent.
@@ -38,7 +41,8 @@ Evaluate which result is most likely a real course syllabus.
     raw = await call_claude(SYSTEM, prompt, model=HAIKU)
     try:
         result = json.loads(raw)
-    except json.JSONDecodeError:
+    except Exception as exc:
+        logger.warning("SyllabusAcquisitionAgent failed: %s", exc)
         return {"found": False, "best_url": None, "confidence": 0.0, "reason": raw}
 
     if result.get("found") and result.get("best_url"):

@@ -62,13 +62,14 @@ action plan.
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for full system design, database schema, extension auth handshake, and frontend state patterns.
-
-See [`docs/AGENTS.md`](./docs/AGENTS.md) for the full 13-agent registry, pipeline coordinator, and failure handling.
-
-See [`docs/API.md`](./docs/API.md) for all endpoint schemas and authentication details.
-
-See [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) for Vercel + Render + Supabase production setup.
+| Document | Contents |
+|----------|----------|
+| [`MASTER_PLAN.md`](./MASTER_PLAN.md) | Product vision, north star, all 13 agents, LLM provider strategy, build milestones |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Full system design, database schema, extension auth handshake, frontend state patterns |
+| [`docs/AGENTS.md`](./docs/AGENTS.md) | 13-agent registry, pipeline coordinator, failure handling patterns |
+| [`docs/API.md`](./docs/API.md) | All endpoint schemas, request/response bodies, authentication details |
+| [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) | Vercel + Render + Supabase production setup |
+| [`docs/EXTENSION.md`](./docs/EXTENSION.md) | Chrome extension architecture, DOM scrapers, sideload instructions |
 
 ---
 
@@ -107,17 +108,21 @@ npm run build
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `OPENAI_API_KEY` | Yes | GPT-4o / GPT-4o-mini for all agents |
-| `TAVILY_API_KEY` | Yes | Web search for Discovery + SyllabusAcquisition |
+| `OPENAI_API_KEY` | One of these three | GPT-4o / GPT-4o-mini — highest quality |
+| `GEMINI_API_KEY` | One of these three | Gemini 1.5 Pro / 2.0 Flash — **free tier** via Google AI Studio |
+| `GROQ_API_KEY` | One of these three | Llama 3.3 70B / 3.1 8B — **free tier** (14,400 req/day) via Groq console |
+| `TAVILY_API_KEY` | Recommended | Web search for Discovery + SyllabusAcquisition; free tier at app.tavily.com |
 | `SUPABASE_URL` | Yes | Project URL |
 | `SUPABASE_SERVICE_KEY` | Yes | Service role key (backend only, never exposed to client) |
 | `SUPABASE_JWT_SECRET` | Yes | JWT verification — copy from Supabase Dashboard → Settings → API → JWT Secret |
 | `CORS_ORIGINS` | No | Default `http://localhost:3000`; set to your Vercel domain in production |
-| `INTERNAL_HEALTH_TOKEN` | No | Protects `GET /health/llm`; shown as LLM badge on dashboard |
+| `INTERNAL_HEALTH_TOKEN` | No | Protects `GET /health/llm`; shown as LLM provider badge on the setup page |
 | `MAX_UPLOAD_BYTES` | No | Default 10 MB; max PDF syllabus size |
 | `RATE_LIMIT_PER_MINUTE` | No | Default 30 req/IP/min |
 | `DEV_AUTH_BYPASS` | No | Default `true` in dev; set `false` in production |
 | `DEV_BEARER_TOKEN` | No | Default `courseintel-local-dev-bearer`; must match frontend |
+
+> **Free setup:** Set `GROQ_API_KEY` (console.groq.com) or `GEMINI_API_KEY` (aistudio.google.com) — no credit card required. The backend auto-selects the first configured provider (OpenAI → Gemini → Groq).
 
 ### Frontend: `frontend/.env.local` (copy from `.env.local.example`)
 

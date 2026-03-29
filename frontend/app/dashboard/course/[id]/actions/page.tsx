@@ -1,10 +1,11 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useCourse } from "@/hooks/use-course";
 import { useActionPlan } from "@/hooks/use-action-plan";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { ActionPlanResponse } from "@/lib/api";
+import { parseIcs, type CalendarEvent } from "@/lib/ics";
 
 const riskStyles: Record<string, { card: string; badge: string; label: string }> = {
   critical: { card: "border-l-espresso-800 bg-espresso-50", badge: "bg-espresso-100 text-espresso-900", label: "Critical Risk" },
@@ -26,6 +27,27 @@ export default function ActionBoardPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const course = useCourse(id);
   const { data: plan, error, isLoading, mutate } = useActionPlan(course ? id : null);
+  const [calendarUrl, setCalendarUrl] = useState("");
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [calendarError, setCalendarError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const key = `courseintel-calendar-${id}`;
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as CalendarEvent[];
+      if (Array.isArray(parsed)) setCalendarEvents(parsed);
+    } catch {
+      // Ignore malformed local cache
+    }
+  }, [id]);
+
+  useEffect(() => {
+    const key = `courseintel-calendar-${id}`;
+    localStorage.setItem(key, JSON.stringify(calendarEvents));
+  }, [calendarEvents, id]);
 
   if (!course) {
     return (
@@ -41,6 +63,62 @@ export default function ActionBoardPage({ params }: { params: Promise<{ id: stri
   const deadlines = course.bootstrap.course_profile?.key_deadlines ?? [];
   const typedPlan = plan as ActionPlanResponse | undefined;
   const risk = riskStyles[typedPlan?.risk_level ?? "unknown"];
+  const formatDateTime = useMemo(
+    () => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }),
+    [],
+  );
+  const formatDate = useMemo(
+    () => new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }),
+    [],
+  );
+
+  async function importIcsText(icsText: string, source: "upload" | "url") {
+    const parsed = parseIcs(icsText).map((e) => ({ ...e, source }));
+    if (parsed.length === 0) {
+      throw new Error("No calendar events found in this ICS.");
+    }
+    setCalendarEvents(parsed);
+    setCalendarError(null);
+  }
+
+  async function handleImportFile(file: File | null) {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      await importIcsText(text, "upload");
+    } catch (err) {
+      setCalendarError(err instanceof Error ? err.message : "Failed to import ICS file");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleImportUrl() {
+    const url = calendarUrl.trim();
+    if (!url) {
+      setCalendarError("Paste an ICS URL first.");
+      return;
+    }
+    setImporting(true);
+    try {
+      const res = await fetch("/api/ics/fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({ error: "URL import failed" }))) as { error?: string };
+        throw new Error(body.error || `URL import failed (${res.status})`);
+      }
+      const body = (await res.json()) as { ics: string };
+      await importIcsText(body.ics, "url");
+    } catch (err) {
+      setCalendarError(err instanceof Error ? err.message : "Failed to import ICS URL");
+    } finally {
+      setImporting(false);
+    }
+  }
 
   return (
     <div className="space-y-6 stagger">
@@ -170,6 +248,100 @@ export default function ActionBoardPage({ params }: { params: Promise<{ id: stri
           })}
         </div>
       )}
+
+      <div className="card p-5 space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="section-label mb-1">Calendar Import</p>
+            <p className="text-sm text-burnt-peach-500">
+              Import an iCalendar feed (URL or .ics) and view events in a calendar table.
+            </p>
+          </div>
+          {calendarEvents.length > 0 && (
+            <button
+              type="button"
+              className="btn-secondary text-xs"
+              onClick={() => setCalendarEvents([])}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
+          <input
+            value={calendarUrl}
+            onChange={(e) => setCalendarUrl(e.target.value)}
+            placeholder="Paste ICS URL (https://...)"
+            className="input"
+            disabled={importing}
+          />
+          <button
+            type="button"
+            onClick={handleImportUrl}
+            disabled={importing}
+            className="btn-secondary text-sm disabled:opacity-50"
+          >
+            {importing ? "Importing..." : "Import URL"}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <input
+            type="file"
+            accept=".ics,text/calendar"
+            disabled={importing}
+            onChange={(e) => void handleImportFile(e.target.files?.[0] ?? null)}
+            className="text-sm text-espresso-800 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-almond-cream-100 file:text-espresso-900 hover:file:bg-almond-cream-200 transition-all"
+          />
+          <span className="text-xs text-burnt-peach-500">.ics only</span>
+        </div>
+
+        {calendarError && (
+          <div className="rounded-lg border border-espresso-200 bg-espresso-50 p-3 text-sm text-espresso-900">
+            {calendarError}
+          </div>
+        )}
+
+        {calendarEvents.length > 0 ? (
+          <div className="overflow-x-auto rounded-lg border border-almond-cream-200">
+            <table className="w-full text-sm">
+              <thead className="bg-almond-cream-50 text-espresso-900">
+                <tr>
+                  <th className="text-left px-3 py-2 font-semibold">Start</th>
+                  <th className="text-left px-3 py-2 font-semibold">End</th>
+                  <th className="text-left px-3 py-2 font-semibold">Title</th>
+                  <th className="text-left px-3 py-2 font-semibold">Location</th>
+                  <th className="text-left px-3 py-2 font-semibold">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {calendarEvents.map((evt) => (
+                  <tr key={`${evt.uid}-${evt.start}`} className="border-t border-almond-cream-100">
+                    <td className="px-3 py-2 text-burnt-peach-500">
+                      {evt.allDay ? formatDate.format(new Date(evt.start)) : formatDateTime.format(new Date(evt.start))}
+                    </td>
+                    <td className="px-3 py-2 text-burnt-peach-500">
+                      {evt.end
+                        ? (evt.allDay ? formatDate.format(new Date(evt.end)) : formatDateTime.format(new Date(evt.end)))
+                        : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-shadow-grey-900 font-medium">{evt.title}</td>
+                    <td className="px-3 py-2 text-espresso-800">{evt.location || "—"}</td>
+                    <td className="px-3 py-2">
+                      <span className="badge-ice">{evt.source ?? "import"}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-burnt-peach-500">
+            No imported events yet.
+          </p>
+        )}
+      </div>
 
       {!typedPlan && !isLoading && !error && deadlines.length === 0 && (
         <EmptyState
