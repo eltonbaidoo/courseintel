@@ -3,8 +3,11 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    # LLM: OpenAI only (agents use gpt-4o / gpt-4o-mini via logical tiers in agents/base.py)
+    # LLM provider — set ONE of these (OpenAI takes precedence if both are set)
+    # OpenAI: https://platform.openai.com/api-keys
     openai_api_key: Optional[str] = None
+    # Groq (free tier, OpenAI-compatible): https://console.groq.com/keys
+    groq_api_key: Optional[str] = None
 
     # Web search
     tavily_api_key: str
@@ -36,7 +39,11 @@ class Settings(BaseSettings):
 
     @property
     def llm_provider(self) -> str:
-        return "openai" if self.openai_api_key else "none"
+        if self.openai_api_key:
+            return "openai"
+        if self.groq_api_key:
+            return "groq"
+        return "none"
 
     class Config:
         env_file = ".env"

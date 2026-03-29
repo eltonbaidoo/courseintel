@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useBootstrap } from "@/hooks/use-course";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -134,10 +134,30 @@ const statusIcon = (s: StepStatus) => {
   return <span className="w-2 h-2 rounded-full bg-almond-cream-200 inline-block" />;
 };
 
+type AgentHealth = "checking" | "online" | "offline" | "unconfigured" | "unknown";
+
+function useAgentHealth(): AgentHealth {
+  const [status, setStatus] = useState<AgentHealth>("checking");
+  useEffect(() => {
+    const url = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+    const token = process.env.NEXT_PUBLIC_HEALTH_TOKEN ?? "";
+    if (!token) { setStatus("unknown"); return; }
+    fetch(`${url}/health/agents`, { headers: { "X-Internal-Token": token } })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: { agents_online: boolean; provider: string }) => {
+        if (data.provider === "none") setStatus("unconfigured");
+        else setStatus(data.agents_online ? "online" : "offline");
+      })
+      .catch(() => setStatus("unknown"));
+  }, []);
+  return status;
+}
+
 export default function CourseSetupPage() {
   const router = useRouter();
   const { bootstrap } = useBootstrap();
   const { toast } = useToast();
+  const agentHealth = useAgentHealth();
 
   const [steps, setSteps] = useState(INITIAL_STEPS);
   const [running, setRunning] = useState(false);
@@ -240,6 +260,30 @@ export default function CourseSetupPage() {
           build your intelligence model.
         </p>
       </div>
+
+      {/* Agent health banner */}
+      {agentHealth === "unconfigured" && (
+        <div className="mb-6 rounded-xl border border-espresso-800 bg-espresso-950 px-4 py-3 text-sm text-espresso-700">
+          <span className="font-semibold text-espresso-600">Agents offline — no LLM key set.</span>{" "}
+          Add <code className="text-xs bg-espresso-900 px-1 py-0.5 rounded">OPENAI_API_KEY</code> or{" "}
+          <code className="text-xs bg-espresso-900 px-1 py-0.5 rounded">GROQ_API_KEY</code> (free) to{" "}
+          <code className="text-xs bg-espresso-900 px-1 py-0.5 rounded">backend/.env</code>.
+          Bootstrap will save partial data only.
+        </div>
+      )}
+      {agentHealth === "offline" && (
+        <div className="mb-6 rounded-xl border border-espresso-800 bg-espresso-950 px-4 py-3 text-sm text-espresso-700">
+          <span className="font-semibold text-espresso-600">Agent ping failed.</span>{" "}
+          The LLM key is set but the provider isn&apos;t responding. Check your key or try{" "}
+          <code className="text-xs bg-espresso-900 px-1 py-0.5 rounded">GET /health/agents</code> for the error.
+        </div>
+      )}
+      {agentHealth === "online" && (
+        <div className="mb-6 rounded-xl border border-espresso-900 bg-shadow-grey-900/30 px-4 py-3 text-sm text-burnt-peach-500 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-burnt-peach-400 shrink-0" />
+          Agents online — pipeline ready
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Form */}
