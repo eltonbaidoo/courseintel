@@ -45,7 +45,7 @@ export function LandingHero() {
 
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
             <Link
-              href="/demo"
+              href="/login"
               className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-burnt-peach-500 px-8 text-base font-semibold text-almond-cream-50 transition-all duration-200 ease-out hover:bg-burnt-peach-600 sm:w-auto"
             >
               <PlayCircle className="h-5 w-5" aria-hidden />
