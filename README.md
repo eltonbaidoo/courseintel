@@ -23,7 +23,7 @@ action plan.
 
 **Chrome Extension:** Grade import from Gradescope, Canvas, and Brightspace/D2L — 3 DOM scrapers with real CSS selectors, validated by 29 Jest unit tests running in jsdom. `ExtensionValidationAgent` cross-checks scraped items against the course syllabus schema before merging.
 
-**Test Coverage:** 67 Python tests (grade math, agent fallbacks, API routes) + 29 TypeScript tests (extension scrapers) + Playwright E2E tests across 7 dashboard screens.
+**Test Coverage:** 75 Python tests (grade math, agent fallbacks, API routes, SSE streaming, LLM cache) + 29 TypeScript tests (extension scrapers) + Playwright E2E smoke tests across landing, auth, and demo fixture integrity.
 
 ---
 
@@ -59,9 +59,11 @@ action plan.
 │  compute_required_scores() — algebraic goal solver              │
 │  compute_grade_trend()     — linear regression + projection     │
 │                                                                 │
-│  Async Job Queue: POST /courses/bootstrap/async → job_id        │
-│  Priority Scheduler: GET /courses/{id}/obligations/prioritized  │
-│  Stale Task Reaper: asyncio background loop (60s interval)      │
+│  SSE Streaming:  POST /courses/bootstrap/stream → text/event-stream │
+│  Async Job Queue: POST /courses/bootstrap/async → job_id           │
+│  Priority Scheduler: GET /courses/{id}/obligations/prioritized     │
+│  Stale Task Reaper: asyncio background loop (60s interval)         │
+│  LLM Cache: SHA-256 keyed, 1h TTL · GET /health/cache metrics      │
 └───────────────────────────┬─────────────────────────────────────┘
                             │ Supabase JS / service key
 ┌───────────────────────────▼─────────────────────────────────────┐
