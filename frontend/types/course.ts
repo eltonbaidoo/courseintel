@@ -56,13 +56,24 @@ export interface CourseProfile {
   workflow_notes?: string;
 }
 
+export interface ObligationItem {
+  title: string;
+  due_date: string | null;
+  source: string;
+  type: string;
+  urgency: "high" | "medium" | "low";
+  conflict_note?: string | null;
+}
+
 export interface BootstrapResponse {
+  id?: string | null;
   course_identity: CourseIdentity;
   syllabus_status: SyllabusStatus;
   course_profile: CourseProfile;
   resources: PublicResource[];
   detected_tools: DetectedTool[];
   student_signal: StudentSignal;
+  obligations: ObligationItem[];
 }
 
 /** Local aggregate stored in Zustand; combines bootstrap data + metadata */

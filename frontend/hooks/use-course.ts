@@ -19,7 +19,7 @@ export function useBootstrap() {
       formData: FormData,
       meta: { university: string; course: string; professor: string },
     ): Promise<Course> => {
-      const res: BootstrapResponse & { id?: string } = await api.bootstrapCourse(formData);
+      const res: BootstrapResponse = await api.bootstrapCourse(formData);
       const id = res.id ?? crypto.randomUUID();
       const course: Course = {
         id,
