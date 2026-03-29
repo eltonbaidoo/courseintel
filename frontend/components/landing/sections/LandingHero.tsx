@@ -46,13 +46,13 @@ export function LandingHero() {
 
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
             <Button variant="base44" className="h-12 w-full rounded-full px-8 text-base sm:w-auto" asChild>
-              <Link href="/signup" className="inline-flex items-center gap-2">
+              <Link href="/early-access" className="inline-flex items-center gap-2">
                 Get early access
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
             </Button>
             <Link
-              href="/demo"
+              href="/login"
               className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-espresso-700 bg-shadow-grey-900/50 px-8 text-base font-medium text-almond-cream-300 transition-all duration-200 ease-out hover:border-burnt-peach-500/50 hover:bg-espresso-900/80 hover:text-almond-cream-50 sm:w-auto"
             >
               <PlayCircle className="h-5 w-5 text-burnt-peach-400" aria-hidden />
