@@ -2,9 +2,8 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, PlayCircle, TrendingUp } from "lucide-react";
+import { ChevronDown, PlayCircle, TrendingUp } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { ScrollReveal } from "../ScrollReveal";
@@ -45,17 +44,11 @@ export function LandingHero() {
           </p>
 
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
-            <Button variant="base44" className="h-12 w-full rounded-full px-8 text-base sm:w-auto" asChild>
-              <Link href="/early-access" className="inline-flex items-center gap-2">
-                Get early access
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-            </Button>
             <Link
               href="/login"
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-espresso-700 bg-shadow-grey-900/50 px-8 text-base font-medium text-almond-cream-300 transition-all duration-200 ease-out hover:border-burnt-peach-500/50 hover:bg-espresso-900/80 hover:text-almond-cream-50 sm:w-auto"
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-burnt-peach-500 px-8 text-base font-semibold text-almond-cream-50 transition-all duration-200 ease-out hover:bg-burnt-peach-600 sm:w-auto"
             >
-              <PlayCircle className="h-5 w-5 text-burnt-peach-400" aria-hidden />
+              <PlayCircle className="h-5 w-5" aria-hidden />
               Try interactive demo
             </Link>
             <Link

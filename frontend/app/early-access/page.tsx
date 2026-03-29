@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle, PlayCircle, GraduationCap, Mail, School, TrendingUp, AlertCircle, BarChart2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle, PlayCircle, GraduationCap, Mail, School, TrendingUp, AlertCircle, BarChart2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { CourseIntelLogo } from "@/components/brand/CourseIntelLogo";
 
@@ -20,11 +20,12 @@ const SCHOOL_YEARS = [
 function FloatingCards() {
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-espresso-950">
-      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 60%, rgba(190,100,65,0.13) 0%, transparent 70%)" }} />
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 60%, rgba(190,100,65,0.06) 0%, transparent 70%)" }} />
 
       <div className="absolute left-8 top-8">
-        <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
-          <CourseIntelLogo className="h-8 w-auto" priority />
+        <Link href="/" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-almond-cream-500 transition-all duration-200 hover:bg-espresso-900/60 hover:text-almond-cream-200">
+          <ArrowLeft className="h-4 w-4" />
+          Back
         </Link>
       </div>
       <div className="absolute bottom-8 left-8 right-8">
