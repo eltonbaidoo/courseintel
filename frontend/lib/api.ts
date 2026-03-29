@@ -132,6 +132,16 @@ export const api = {
     request<ActionPlanResponse>(`/courses/${courseId}/action-plan`),
 
   /* ── Grades ── */
+  getGradeTrend: (courseId: string) =>
+    request<{
+      slope_per_entry: number;
+      trend_label: "improving" | "declining" | "stable" | "insufficient_data";
+      projected_final: number | null;
+      projected_letter: string | null;
+      data_points: number;
+      confidence: "low" | "medium" | "high";
+    }>(`/grades/courses/${courseId}/trend`),
+
   computeGrades: (entries: GradeEntryPayload[], categories: Record<string, number>) =>
     request<ComputeGradeResponse>("/grades/compute", {
       method: "POST",
