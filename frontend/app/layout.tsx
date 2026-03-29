@@ -6,8 +6,11 @@ import {
   Roboto_Condensed,
   Roboto_Slab,
 } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ClerkTokenBridge } from "@/components/providers/ClerkTokenBridge";
 import { ToastProvider } from "@/components/ui/ToastProvider";
+import { CLERK_PUBLISHABLE_KEY, isClerkAuthEnabled } from "@/lib/auth-config";
 import "./globals.css";
 
 const inter = Inter({
@@ -49,14 +52,25 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const shell = (
+    <AuthProvider>
+      <ToastProvider>{children}</ToastProvider>
+    </AuthProvider>
+  );
+
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${playfair.variable} ${roboto.variable} ${robotoCondensed.variable} ${robotoSlab.variable} font-sans antialiased`}
       >
-        <AuthProvider>
-          <ToastProvider>{children}</ToastProvider>
-        </AuthProvider>
+        {isClerkAuthEnabled() ? (
+          <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+            <ClerkTokenBridge />
+            {shell}
+          </ClerkProvider>
+        ) : (
+          shell
+        )}
       </body>
     </html>
   );

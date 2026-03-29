@@ -5,10 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { CourseIntelLogo } from "@/components/brand/CourseIntelLogo";
+import { useAppStore } from "@/stores/app-store";
+import { isClerkAuthEnabled } from "@/lib/auth-config";
+import {
+  DEV_AUTH_BYPASS,
+  DEV_USER_ID,
+  setDevSessionClient,
+} from "@/lib/dev-auth";
 
 function VerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const setUser = useAppStore((s) => s.setUser);
   const email = searchParams.get("email") ?? "";
   const isDemo = searchParams.get("demo") === "1";
 
@@ -17,12 +25,27 @@ function VerifyForm() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
+  const [devSkipping, setDevSkipping] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  async function handleDevSkip() {
+    setDevSkipping(true);
+    await supabase.auth.signOut();
+    setDevSessionClient();
+    setUser({ id: DEV_USER_ID, email: email.trim() || "dev@local" });
+    router.push("/dashboard");
+  }
 
   // Auto-focus first input
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
+
+  useEffect(() => {
+    if (isClerkAuthEnabled()) {
+      router.replace("/login");
+    }
+  }, [router]);
 
   function handleChange(index: number, value: string) {
     // Only allow digits
@@ -156,6 +179,12 @@ function VerifyForm() {
             Demo onboarding: enter the code from your email to finish and open your dashboard.
           </p>
         )}
+        <p className="rounded-lg border border-espresso-800/40 bg-espresso-950/50 px-3 py-2 text-left text-xs leading-relaxed text-almond-cream-500">
+          <span className="font-medium text-almond-cream-400">No code?</span> Supabase may send a{" "}
+          <strong className="text-almond-cream-300">confirmation link</strong> instead of digits unless your project uses an OTP
+          template and SMTP. Check spam, or in the Supabase dashboard open{" "}
+          <span className="font-mono text-[11px] text-almond-cream-400">Authentication → Users</span> and confirm the user.
+        </p>
       </div>
 
       {error && (
@@ -222,6 +251,16 @@ function VerifyForm() {
 
       {/* Resend */}
       <div className="text-center space-y-3">
+        {DEV_AUTH_BYPASS && (
+          <button
+            type="button"
+            onClick={handleDevSkip}
+            disabled={devSkipping}
+            className="mb-1 w-full rounded-xl border border-espresso-700 bg-espresso-950/80 px-4 py-3 text-sm font-medium text-almond-cream-200 transition-colors hover:border-burnt-peach-500/40 hover:bg-espresso-900 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {devSkipping ? "Opening dashboard…" : "Skip verification (local dev only)"}
+          </button>
+        )}
         <button
           type="button"
           onClick={handleResend}

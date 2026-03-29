@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { DEV_AUTH_BYPASS, DEV_BEARER_TOKEN, hasDevSessionCookie } from "@/lib/dev-auth";
+import { DEV_AUTH_BYPASS, DEV_BEARER_TOKEN } from "@/lib/dev-auth";
 import type { BootstrapResponse } from "@/types/course";
 import type {
   ComputeGradeResponse,
@@ -30,6 +30,15 @@ export interface StudyAnalysisResponse {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+type ClerkTokenGetter = () => Promise<string | null>;
+
+let clerkTokenGetter: ClerkTokenGetter | null = null;
+
+/** Called from `ClerkTokenBridge` when Clerk auth is enabled. */
+export function setClerkTokenGetter(fn: ClerkTokenGetter | null): void {
+  clerkTokenGetter = fn;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -41,8 +50,18 @@ export class ApiError extends Error {
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
-  if (DEV_AUTH_BYPASS && hasDevSessionCookie()) {
+  // In local dev, always use the dev bearer so any logged-in user can hit the backend
+  // without needing SUPABASE_JWT_SECRET configured locally.
+  if (DEV_AUTH_BYPASS) {
     return { Authorization: `Bearer ${DEV_BEARER_TOKEN}` };
+  }
+  if (clerkTokenGetter) {
+    try {
+      const token = await clerkTokenGetter();
+      if (token) return { Authorization: `Bearer ${token}` };
+    } catch {
+      /* session not ready */
+    }
   }
   const {
     data: { session },

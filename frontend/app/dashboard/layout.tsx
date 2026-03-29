@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { usePathname } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
-import { clearDevSessionClient, hasDevSessionCookie } from "@/lib/dev-auth";
 import { CourseIntelLogo } from "@/components/brand/CourseIntelLogo";
+import { SignOutControl } from "@/components/dashboard/SignOutControl";
 import LLMProviderBadge from "@/components/LLMProviderBadge";
 import DemoWelcomeBanner from "@/components/dashboard/DemoWelcomeBanner";
 
@@ -24,23 +23,11 @@ const COURSE_NAV = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const user = useAppStore((s) => s.user);
-  const setUser = useAppStore((s) => s.setUser);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const courseMatch = pathname.match(/\/dashboard\/course\/([^/]+)/);
   const courseId = courseMatch?.[1];
-
-  async function handleSignOut() {
-    if (hasDevSessionCookie()) {
-      clearDevSessionClient();
-      setUser(null);
-    } else {
-      await supabase.auth.signOut();
-    }
-    router.push("/login");
-  }
 
   const sidebar = (
     <aside className="w-60 shrink-0 bg-shadow-grey-950 flex flex-col border-r border-shadow-grey-900 h-full">
@@ -106,12 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {user && (
           <div className="flex items-center justify-between">
             <p className="text-xs text-almond-cream-400 truncate max-w-[140px]">{user.email}</p>
-            <button
-              onClick={handleSignOut}
-              className="text-xs text-espresso-800 hover:text-almond-cream-300 transition-colors"
-            >
-              Sign out
-            </button>
+            <SignOutControl />
           </div>
         )}
         <LLMProviderBadge />

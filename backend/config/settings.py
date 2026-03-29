@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     dev_auth_bypass: bool = False
     dev_bearer_token: str = "courseintel-local-dev-bearer"
 
+    # Optional: Clerk session JWT (RS256) — JWKS URL from Clerk Dashboard → API Keys → Advanced
+    # Example: https://your-app.clerk.accounts.dev/.well-known/jwks.json
+    clerk_jwks_url: Optional[str] = None
+
     @property
     def llm_provider(self) -> str:
         return "openai" if self.openai_api_key else "none"
