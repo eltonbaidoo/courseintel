@@ -3,7 +3,7 @@ Unit tests for GradeIntelligenceAgent.
 All functions are deterministic Python — no mocks, no LLM, no fixtures needed.
 """
 import pytest
-from agents.grade_intelligence import compute_current_grade, compute_required_scores, GradeEntry
+from agents.grade_intelligence import compute_current_grade, compute_required_scores, compute_grade_trend, GradeEntry
 
 
 # ── compute_current_grade ────────────────────────────────────────────────────
@@ -82,6 +82,89 @@ def test_required_scores_no_remaining():
 
 
 # ── Letter grade thresholds (_to_letter via compute_current_grade) ────────────
+
+# ── compute_grade_trend ──────────────────────────────────────────────────────
+
+def test_trend_empty_entries():
+    result = compute_grade_trend([], {"Exams": 1.0})
+    assert result["trend_label"] == "stable"
+    assert result["projected_final"] == 0.0
+    assert result["confidence"] == "low"
+
+
+def test_trend_improving():
+    """Scores increasing over time → positive slope → improving."""
+    categories = {"HW": 1.0}
+    entries = [
+        GradeEntry(score_earned=50, score_possible=100, category="HW", weight=1.0, created_at="2025-01-01T00:00:00"),
+        GradeEntry(score_earned=65, score_possible=100, category="HW", weight=1.0, created_at="2025-01-08T00:00:00"),
+        GradeEntry(score_earned=75, score_possible=100, category="HW", weight=1.0, created_at="2025-01-15T00:00:00"),
+        GradeEntry(score_earned=85, score_possible=100, category="HW", weight=1.0, created_at="2025-01-22T00:00:00"),
+        GradeEntry(score_earned=92, score_possible=100, category="HW", weight=1.0, created_at="2025-01-29T00:00:00"),
+    ]
+    result = compute_grade_trend(entries, categories)
+    assert result["trend_label"] == "improving"
+    assert result["slope_per_entry"] > 0
+    assert result["projected_final"] > entries[0].score_earned
+
+
+def test_trend_declining():
+    """Scores decreasing over time → negative slope → declining."""
+    categories = {"HW": 1.0}
+    entries = [
+        GradeEntry(score_earned=95, score_possible=100, category="HW", weight=1.0, created_at="2025-01-01T00:00:00"),
+        GradeEntry(score_earned=85, score_possible=100, category="HW", weight=1.0, created_at="2025-01-08T00:00:00"),
+        GradeEntry(score_earned=72, score_possible=100, category="HW", weight=1.0, created_at="2025-01-15T00:00:00"),
+        GradeEntry(score_earned=60, score_possible=100, category="HW", weight=1.0, created_at="2025-01-22T00:00:00"),
+        GradeEntry(score_earned=50, score_possible=100, category="HW", weight=1.0, created_at="2025-01-29T00:00:00"),
+    ]
+    result = compute_grade_trend(entries, categories)
+    assert result["trend_label"] == "declining"
+    assert result["slope_per_entry"] < 0
+
+
+def test_trend_stable():
+    """Consistent scores → near-zero slope → stable."""
+    categories = {"HW": 1.0}
+    entries = [
+        GradeEntry(score_earned=80, score_possible=100, category="HW", weight=1.0, created_at=f"2025-01-0{i+1}T00:00:00")
+        for i in range(5)
+    ]
+    result = compute_grade_trend(entries, categories)
+    assert result["trend_label"] == "stable"
+    assert abs(result["slope_per_entry"]) < 0.5
+
+
+def test_trend_data_points_count():
+    """data_points list length equals number of entries."""
+    categories = {"Labs": 1.0}
+    entries = [
+        GradeEntry(score_earned=70 + i * 3, score_possible=100, category="Labs", weight=1.0)
+        for i in range(6)
+    ]
+    result = compute_grade_trend(entries, categories)
+    assert len(result["data_points"]) == 6
+
+
+def test_trend_confidence_scales_with_sample_size():
+    """Confidence increases with more entries."""
+    categories = {"HW": 1.0}
+    make = lambda n: [GradeEntry(80, 100, "HW", 1.0) for _ in range(n)]
+    assert compute_grade_trend(make(1), categories)["confidence"] == "low"
+    assert compute_grade_trend(make(4), categories)["confidence"] == "medium"
+    assert compute_grade_trend(make(8), categories)["confidence"] == "high"
+
+
+def test_trend_projected_final_clamped_to_100():
+    """Projection never exceeds 100%."""
+    categories = {"HW": 1.0}
+    entries = [
+        GradeEntry(score_earned=98 + i, score_possible=100, category="HW", weight=1.0, created_at=f"2025-01-0{i+1}T00:00:00")
+        for i in range(5)
+    ]
+    result = compute_grade_trend(entries, categories)
+    assert result["projected_final"] <= 100.0
+
 
 @pytest.mark.parametrize("score,expected_letter", [
     (0.93, "A"),

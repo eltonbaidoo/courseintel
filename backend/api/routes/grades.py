@@ -8,6 +8,7 @@ from models.grades import GradeEntryCreate, GoalRequest
 from agents.grade_intelligence import (
     compute_current_grade,
     compute_required_scores,
+    compute_grade_trend,
     GradeEntry,
 )
 
@@ -86,6 +87,53 @@ async def list_grade_entries(
 
     entries = queries.list_grade_entries(course_id, user_id)
     return {"entries": entries}
+
+
+@router.get("/courses/{course_id}/trend")
+async def get_grade_trend(
+    course_id: str,
+    user_id: str = Depends(get_user_id),
+):
+    """
+    Grade trend analysis using linear regression over time-ordered entries.
+
+    Returns slope (grade change per assignment), trend label
+    (improving/stable/declining), projected final grade, and the
+    data point series for charting.
+    """
+    course = queries.get_course(course_id, user_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found.")
+
+    entries_raw = queries.list_grade_entries(course_id, user_id)
+    categories = {
+        c["name"]: c["weight"]
+        for c in course.get("course_profile", {}).get("grading_categories", [])
+    }
+
+    if not entries_raw or not categories:
+        return {
+            "slope_per_entry": 0.0,
+            "trend_label": "stable",
+            "projected_final": 0.0,
+            "projected_letter": "N/A",
+            "data_points": [],
+            "confidence": "low",
+            "message": "Not enough data. Add grades and a course profile to see trends.",
+        }
+
+    grade_entries = [
+        GradeEntry(
+            score_earned=e["score_earned"],
+            score_possible=e["score_possible"],
+            category=e["category"],
+            weight=categories.get(e["category"], 0),
+            created_at=e.get("created_at"),
+        )
+        for e in entries_raw
+    ]
+
+    return compute_grade_trend(grade_entries, categories)
 
 
 @router.delete("/entries/{entry_id}")
