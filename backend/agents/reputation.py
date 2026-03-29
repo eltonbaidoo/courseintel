@@ -3,8 +3,24 @@ Reputation & Student Signal Agent
 Synthesizes public student sentiment about a course and professor.
 """
 import json
+import logging
+from typing import TypedDict
 from agents.base import call_llm as call_claude, SONNET
 from services.search import search_for_reputation
+
+logger = logging.getLogger(__name__)
+
+
+class ReputationResult(TypedDict):
+    workload: str
+    difficulty: str
+    grading_style: str
+    key_warnings: list[str]
+    positive_signals: list[str]
+    summary: str
+    confidence: float
+    source_count: int
+
 
 SYSTEM = """
 You are the Reputation & Student Signal Agent.
@@ -23,7 +39,7 @@ Return only valid JSON.
 """
 
 
-async def run(course: str, professor: str, university: str) -> dict:
+async def run(course: str, professor: str, university: str) -> ReputationResult:
     results = await search_for_reputation(course, professor, university)
     if not results:
         return {"summary": "No public signal found.", "confidence": 0.0}
@@ -31,8 +47,9 @@ async def run(course: str, professor: str, university: str) -> dict:
         f"- {r.get('title', '')}\n  {str(r.get('content', ''))[:400]}" for r in results
     )
     prompt = f"Course: {course}\nProfessor: {professor}\nUniversity: {university}\n\nSources:\n{context}"
-    raw = await call_claude(SYSTEM, prompt, model=SONNET)
     try:
+        raw = await call_claude(SYSTEM, prompt, model=SONNET)
         return json.loads(raw)
-    except json.JSONDecodeError:
-        return {"summary": raw[:500], "confidence": 0.3}
+    except Exception as exc:
+        logger.warning("ReputationAgent failed: %s", exc)
+        return {"workload": "unknown", "difficulty": "unknown", "grading_style": "unknown", "key_warnings": [], "positive_signals": [], "summary": str(exc), "confidence": 0.2, "source_count": 0}
