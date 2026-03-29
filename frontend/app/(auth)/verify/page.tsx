@@ -9,6 +9,7 @@ function VerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
+  const isDemo = searchParams.get("demo") === "1";
 
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [error, setError] = useState<string | null>(null);
@@ -114,18 +115,18 @@ function VerifyForm() {
   if (!email) {
     return (
       <div className="glass rounded-2xl p-8 text-center space-y-4">
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-coral-500/10 flex items-center justify-center">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-coral-400">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-espresso-800/10 flex items-center justify-center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-burnt-peach-600">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
         </div>
-        <h1 className="font-display text-xl font-bold text-white">Missing email</h1>
-        <p className="text-sm text-honeydew-400/80">
+        <h1 className="font-display text-xl font-bold text-almond-cream-50">Missing email</h1>
+        <p className="text-sm text-almond-cream-400/80">
           Please sign up first to receive a verification code.
         </p>
-        <Link href="/signup" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-honeydew-500 text-white font-semibold text-sm font-display hover:bg-honeydew-600 transition-colors">
+        <Link href="/signup" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-burnt-peach-500 text-almond-cream-50 font-semibold text-sm font-display hover:bg-espresso-800 transition-colors">
           Go to Sign Up
         </Link>
       </div>
@@ -136,23 +137,28 @@ function VerifyForm() {
     <div className="glass rounded-2xl p-8 space-y-6">
       {/* Header */}
       <div className="text-center space-y-3">
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-honeydew-500/20 to-neon-ice-500/20 flex items-center justify-center animate-scale-in">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-honeydew-400">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-espresso-800 bg-espresso-950 animate-scale-in">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-almond-cream-400">
             <rect width="20" height="16" x="2" y="4" rx="2" />
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
           </svg>
         </div>
-        <h1 className="font-display text-2xl font-bold text-white">
+        <h1 className="font-display text-2xl font-bold text-almond-cream-50">
           Check your email
         </h1>
-        <p className="text-sm text-honeydew-400/80">
+        <p className="text-sm text-almond-cream-400/80">
           We sent a 6-digit code to{" "}
-          <span className="text-honeydew-300 font-medium">{email}</span>
+          <span className="font-medium text-almond-cream-300">{email}</span>
         </p>
+        {isDemo && (
+          <p className="rounded-lg border border-burnt-peach-500/20 bg-burnt-peach-500/10 px-3 py-2 text-xs text-almond-cream-300/90">
+            Demo onboarding: enter the code from your email to finish and open your dashboard.
+          </p>
+        )}
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-coral-500/10 border border-coral-500/20 text-coral-400 text-sm animate-fade-in">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-espresso-800/10 border border-espresso-800/20 text-burnt-peach-600 text-sm animate-fade-in">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <line x1="15" y1="9" x2="9" y2="15" />
@@ -163,7 +169,7 @@ function VerifyForm() {
       )}
 
       {resent && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-honeydew-500/10 border border-honeydew-500/20 text-honeydew-400 text-sm animate-fade-in">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-burnt-peach-500/10 border border-burnt-peach-500/20 text-almond-cream-400 text-sm animate-fade-in">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
             <polyline points="22 4 12 14.01 9 11.01" />
@@ -195,12 +201,12 @@ function VerifyForm() {
         <button
           type="submit"
           disabled={loading || otp.some((d) => d === "")}
-          className="w-full relative group px-5 py-3.5 rounded-xl bg-gradient-to-r from-honeydew-500 to-neon-ice-500 text-white font-semibold text-sm font-display shadow-glow-green hover:shadow-glow-ice transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+          className="w-full rounded-xl bg-burnt-peach-500 px-5 py-3.5 font-display text-sm font-semibold text-almond-cream-50 transition-colors hover:bg-burnt-peach-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <span className="relative z-10 flex items-center justify-center gap-2">
+          <span className="flex items-center justify-center gap-2">
             {loading ? (
               <>
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
@@ -210,7 +216,6 @@ function VerifyForm() {
               "Verify & Continue"
             )}
           </span>
-          <div className="absolute inset-0 bg-gradient-to-r from-neon-ice-500 to-honeydew-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </button>
       </form>
 
@@ -220,17 +225,17 @@ function VerifyForm() {
           type="button"
           onClick={handleResend}
           disabled={resending || resent}
-          className="text-sm text-honeydew-500 hover:text-honeydew-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-sm text-burnt-peach-500 hover:text-almond-cream-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {resending ? "Sending..." : "Didn\u2019t receive the code? Resend"}
         </button>
 
-        <div className="flex items-center justify-center gap-3 text-xs text-honeydew-600/50">
-          <Link href="/signup" className="hover:text-honeydew-400 transition-colors">
+        <div className="flex items-center justify-center gap-3 text-xs text-espresso-800/50">
+          <Link href="/signup" className="hover:text-almond-cream-400 transition-colors">
             Use a different email
           </Link>
-          <span className="w-1 h-1 rounded-full bg-honeydew-600/30" />
-          <Link href="/login" className="hover:text-honeydew-400 transition-colors">
+          <span className="w-1 h-1 rounded-full bg-espresso-800/30" />
+          <Link href="/login" className="hover:text-almond-cream-400 transition-colors">
             Sign in instead
           </Link>
         </div>
@@ -243,7 +248,7 @@ export default function VerifyPage() {
   return (
     <Suspense fallback={
       <div className="glass rounded-2xl p-8 text-center">
-        <div className="animate-spin h-8 w-8 mx-auto border-2 border-honeydew-500 border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 mx-auto border-2 border-burnt-peach-500 border-t-transparent rounded-full" />
       </div>
     }>
       <VerifyForm />

@@ -80,13 +80,13 @@ export function DashboardStats({
       {items.map((item) => (
         <div
           key={item.label}
-          className="card p-4 border-honeydew-100 bg-white/80 backdrop-blur-sm"
+          className="card border-almond-cream-200 bg-almond-cream-50 p-4"
         >
           <p className="section-label text-[10px] mb-1">{item.label}</p>
-          <p className="font-display text-2xl font-bold text-honeydew-950 tabular-nums">
+          <p className="font-display text-2xl font-bold text-shadow-grey-950 tabular-nums">
             {item.value}
           </p>
-          <p className="text-xs text-honeydew-500 mt-1 leading-snug">{item.hint}</p>
+          <p className="text-xs text-burnt-peach-500 mt-1 leading-snug">{item.hint}</p>
         </div>
       ))}
     </div>

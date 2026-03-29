@@ -1,6 +1,6 @@
 function Pulse({ className }: { className?: string }) {
   return (
-    <div className={`animate-pulse rounded-xl bg-honeydew-100 ${className ?? ""}`} />
+    <div className={`animate-pulse rounded-xl bg-almond-cream-100 ${className ?? ""}`} />
   );
 }
 

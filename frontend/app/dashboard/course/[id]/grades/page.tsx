@@ -5,6 +5,7 @@ import { useCourse } from "@/hooks/use-course";
 import { useAppStore } from "@/stores/app-store";
 import { useComputeGrade } from "@/hooks/use-grades";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { api } from "@/lib/api";
 import type { GradeEntry } from "@/types/grades";
 
 function letterGrade(pct: number) {
@@ -21,17 +22,17 @@ function letterGrade(pct: number) {
 }
 
 function gradeColor(pct: number) {
-  if (pct >= 90) return "text-honeydew-600";
-  if (pct >= 80) return "text-gold-600";
-  if (pct >= 70) return "text-banana-700";
-  return "text-coral-600";
+  if (pct >= 90) return "text-espresso-800";
+  if (pct >= 80) return "text-almond-cream-600";
+  if (pct >= 70) return "text-almond-cream-700";
+  return "text-espresso-700";
 }
 
 function barColor(pct: number) {
-  if (pct >= 90) return "bg-honeydew-500";
-  if (pct >= 80) return "bg-gold-500";
-  if (pct >= 70) return "bg-banana-500";
-  return "bg-coral-500";
+  if (pct >= 90) return "bg-burnt-peach-500";
+  if (pct >= 80) return "bg-almond-cream-500";
+  if (pct >= 70) return "bg-almond-cream-500";
+  return "bg-espresso-800";
 }
 
 export default function GradesPage({ params }: { params: Promise<{ id: string }> }) {
@@ -40,6 +41,7 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
   const entries = useAppStore((s) => s.gradeEntries[id] ?? []);
   const addGradeEntry = useAppStore((s) => s.addGradeEntry);
   const removeGradeEntry = useAppStore((s) => s.removeGradeEntry);
+  const [saving, setSaving] = useState(false);
 
   const categories = course?.bootstrap.course_profile?.grading_categories ?? [];
   const categoryNames = categories.length > 0
@@ -90,8 +92,9 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
         })
         .filter(Boolean) as { cat: string; pct: number }[];
 
-  function addEntry() {
+  async function addEntry() {
     if (!form.title || !form.earned || !form.possible) return;
+    setSaving(true);
     const entry: GradeEntry = {
       id: crypto.randomUUID(),
       courseId: id,
@@ -101,9 +104,24 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
       scorePossible: parseFloat(form.possible),
       source: "manual",
     };
+    // Save to local store immediately (optimistic)
     addGradeEntry(id, entry);
     setForm({ title: "", category: categoryNames[0] ?? "Homework", earned: "", possible: "" });
     setShowForm(false);
+    setSaving(false);
+    // Persist to backend (fire-and-forget — don't block UI)
+    api.addGradeEntry(id, {
+      assignment_title: entry.assignmentTitle,
+      category: entry.category,
+      score_earned: entry.scoreEarned,
+      score_possible: entry.scorePossible,
+      source: "manual",
+    }).catch(() => {/* local store already updated */});
+  }
+
+  function deleteEntry(entryId: string) {
+    removeGradeEntry(id, entryId);
+    api.deleteGradeEntry(entryId).catch(() => {/* local store already updated */});
   }
 
   return (
@@ -111,7 +129,7 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
       <div className="flex items-center justify-between">
         <div>
           <p className="section-label mb-1">Performance</p>
-          <h1 className="font-display text-3xl font-bold text-honeydew-950">
+          <h1 className="font-display text-3xl font-bold text-shadow-grey-950">
             Grades
           </h1>
         </div>
@@ -126,18 +144,18 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
           <div className="text-center shrink-0">
             <p className={`font-mono text-6xl font-bold ${gradeColor(pct)}`}>
               {pct.toFixed(1)}
-              <span className="text-2xl text-honeydew-400">%</span>
+              <span className="text-2xl text-almond-cream-400">%</span>
             </p>
             <p
               className={`font-display text-2xl font-bold mt-1 ${gradeColor(pct)}`}
             >
               {letter}
             </p>
-            <p className="text-xs text-honeydew-400 mt-1">
+            <p className="text-xs text-almond-cream-400 mt-1">
               {totalEarned}/{totalPossible} pts
             </p>
             {computed?.weight_graded != null && (
-              <p className="text-xs text-honeydew-400">
+              <p className="text-xs text-almond-cream-400">
                 {computed.weight_graded}% of grade assessed
               </p>
             )}
@@ -146,11 +164,11 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
             <p className="section-label">By Category</p>
             {categoryBreakdown.map(({ cat, pct }) => (
               <div key={cat}>
-                <div className="flex justify-between text-xs text-honeydew-600 mb-1">
+                <div className="flex justify-between text-xs text-espresso-800 mb-1">
                   <span>{cat}</span>
                   <span className="font-mono font-semibold">{pct.toFixed(0)}%</span>
                 </div>
-                <div className="h-1.5 bg-honeydew-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-almond-cream-100 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full ${barColor(pct)} transition-all`}
                     style={{ width: `${Math.min(pct, 100)}%` }}
@@ -170,7 +188,7 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
 
       {/* Add form */}
       {showForm && (
-        <div className="card p-5 border-honeydew-300 animate-fade-up">
+        <div className="card p-5 border-almond-cream-300 animate-fade-up">
           <p className="section-label mb-3">New Entry</p>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <input
@@ -208,8 +226,8 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={addEntry} className="btn-primary">
-              Save
+            <button onClick={addEntry} disabled={saving} className="btn-primary disabled:opacity-50">
+              {saving ? "Saving…" : "Save"}
             </button>
             <button onClick={() => setShowForm(false)} className="btn-ghost">
               Cancel
@@ -223,7 +241,7 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-honeydew-50 border-b border-honeydew-100">
+              <tr className="bg-almond-cream-50 border-b border-almond-cream-100">
                 <th className="px-5 py-3 text-left section-label">Assignment</th>
                 <th className="px-5 py-3 text-left section-label">Category</th>
                 <th className="px-5 py-3 text-right section-label">Score</th>
@@ -240,13 +258,13 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
                 return (
                   <tr
                     key={e.id}
-                    className="border-t border-honeydew-50 hover:bg-honeydew-50 transition-colors"
+                    className="border-t border-almond-cream-50 hover:bg-almond-cream-50 transition-colors"
                   >
-                    <td className="px-5 py-3 font-medium text-honeydew-900">
+                    <td className="px-5 py-3 font-medium text-shadow-grey-900">
                       {e.assignmentTitle}
                     </td>
-                    <td className="px-5 py-3 text-honeydew-500">{e.category}</td>
-                    <td className="px-5 py-3 text-right font-mono text-honeydew-700">
+                    <td className="px-5 py-3 text-burnt-peach-500">{e.category}</td>
+                    <td className="px-5 py-3 text-right font-mono text-espresso-900">
                       {e.scoreEarned}/{e.scorePossible}
                     </td>
                     <td
@@ -256,8 +274,8 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
                     </td>
                     <td className="px-2 py-3 text-center">
                       <button
-                        onClick={() => removeGradeEntry(id, e.id)}
-                        className="text-honeydew-300 hover:text-coral-500 text-xs transition-colors"
+                        onClick={() => deleteEntry(e.id)}
+                        className="text-almond-cream-300 hover:text-espresso-800 text-xs transition-colors"
                         title="Delete"
                       >
                         x

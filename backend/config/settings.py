@@ -3,8 +3,7 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    # LLM providers — at least one required
-    anthropic_api_key: Optional[str] = None
+    # LLM — OpenAI only (agents use gpt-4o / gpt-4o-mini via logical tiers in agents/base.py)
     openai_api_key: Optional[str] = None
 
     # Web search
@@ -29,11 +28,7 @@ class Settings(BaseSettings):
 
     @property
     def llm_provider(self) -> str:
-        if self.anthropic_api_key:
-            return "anthropic"
-        if self.openai_api_key:
-            return "openai"
-        return "none"
+        return "openai" if self.openai_api_key else "none"
 
     class Config:
         env_file = ".env"

@@ -14,11 +14,11 @@ const WORKLOAD_BADGE: Record<string, string> = {
 };
 
 const QUICK_LINKS = [
-  { href: "resources", label: "Tools & Resources", desc: "Detected platforms + public materials", color: "bg-neon-ice-50 border-neon-ice-200 text-neon-ice-700" },
-  { href: "grades", label: "Grades", desc: "Track and compute your standing", color: "bg-honeydew-50 border-honeydew-200 text-honeydew-700" },
-  { href: "goals", label: "Goal Simulator", desc: "What do I need to get a B+?", color: "bg-gold-50 border-gold-200 text-gold-700" },
-  { href: "study", label: "Study Buddy", desc: "Upload notes → get priorities", color: "bg-banana-50 border-banana-200 text-banana-700" },
-  { href: "actions", label: "Action Board", desc: "Weekly plan from Judgment Agent", color: "bg-coral-50 border-coral-200 text-coral-700" },
+  { href: "resources", label: "Tools & Resources", desc: "Detected platforms + public materials", color: "bg-burnt-peach-50 border-burnt-peach-200 text-burnt-peach-700" },
+  { href: "grades", label: "Grades", desc: "Track and compute your standing", color: "bg-almond-cream-50 border-almond-cream-200 text-espresso-900" },
+  { href: "goals", label: "Goal Simulator", desc: "What do I need to get a B+?", color: "bg-almond-cream-50 border-almond-cream-200 text-almond-cream-700" },
+  { href: "study", label: "Study Buddy", desc: "Upload notes → get priorities", color: "bg-almond-cream-50 border-almond-cream-200 text-almond-cream-700" },
+  { href: "actions", label: "Action Board", desc: "Weekly plan from Judgment Agent", color: "bg-espresso-50 border-espresso-200 text-espresso-800" },
 ];
 
 export default function CourseProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -65,18 +65,18 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
           <p className="section-label mb-1">
             {course.university} {course.professor ? `· ${course.professor}` : ""}
           </p>
-          <h1 className="font-display text-3xl font-bold text-honeydew-950">
+          <h1 className="font-display text-3xl font-bold text-shadow-grey-950">
             {course.courseCode}
           </h1>
-          <p className="text-honeydew-600 mt-0.5">{course.courseName}</p>
+          <p className="text-espresso-800 mt-0.5">{course.courseName}</p>
         </div>
         {syllabus_status && (
           <div className="flex flex-wrap gap-2 shrink-0">
             <span
               className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${
                 syllabus_status.found
-                  ? "bg-honeydew-100 text-honeydew-800 border-honeydew-200"
-                  : "bg-banana-50 text-banana-800 border-banana-200"
+                  ? "bg-almond-cream-100 text-espresso-950 border-almond-cream-200"
+                  : "bg-almond-cream-50 text-almond-cream-800 border-almond-cream-200"
               }`}
             >
               Syllabus {syllabus_status.found ? "located" : "not found"}{" "}
@@ -84,7 +84,7 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
                 · {(syllabus_status.confidence * 100).toFixed(0)}%
               </span>
             </span>
-            <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-honeydew-50 text-honeydew-600 border border-honeydew-100">
+            <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-almond-cream-50 text-espresso-800 border border-almond-cream-100">
               {syllabus_status.source === "upload" ? "From upload" : "From discovery"}
             </span>
           </div>
@@ -92,14 +92,14 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
       </div>
 
       {profile?.course_summary && (
-        <div className="card p-5 border-honeydew-100">
+        <div className="card p-5 border-almond-cream-100">
           <p className="section-label mb-2">Course summary</p>
-          <p className="text-sm text-honeydew-700 leading-relaxed whitespace-pre-wrap">
+          <p className="text-sm text-espresso-900 leading-relaxed whitespace-pre-wrap">
             {profile.course_summary}
           </p>
           {profile.workflow_notes && (
-            <p className="text-xs text-honeydew-500 mt-3 pt-3 border-t border-honeydew-50">
-              <span className="font-semibold text-honeydew-600">Workflow:</span>{" "}
+            <p className="text-xs text-burnt-peach-500 mt-3 pt-3 border-t border-almond-cream-50">
+              <span className="font-semibold text-espresso-800">Workflow:</span>{" "}
               {profile.workflow_notes}
             </p>
           )}
@@ -112,19 +112,19 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
           <div className="text-center shrink-0">
             {gradePct != null ? (
               <>
-                <p className="font-mono text-5xl font-bold text-gold-600">
+                <p className="font-mono text-5xl font-bold text-almond-cream-600">
                   {gradePct.toFixed(1)}%
                 </p>
-                <p className="font-display text-xl font-bold text-gold-500">
+                <p className="font-display text-xl font-bold text-almond-cream-500">
                   {letterGrade}
                 </p>
               </>
             ) : (
               <>
-                <p className="font-mono text-3xl font-bold text-honeydew-300">
+                <p className="font-mono text-3xl font-bold text-almond-cream-300">
                   --%
                 </p>
-                <p className="text-xs text-honeydew-400 mt-1">No grades yet</p>
+                <p className="text-xs text-almond-cream-400 mt-1">No grades yet</p>
               </>
             )}
           </div>
@@ -135,16 +135,16 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
                 {categories.map((g) => (
                   <div key={g.name}>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-honeydew-600">
+                      <span className="text-espresso-800">
                         {g.name}{" "}
-                        <span className="text-honeydew-400">
+                        <span className="text-almond-cream-400">
                           ({(g.weight * 100).toFixed(0)}%)
                         </span>
                       </span>
                     </div>
-                    <div className="h-1.5 bg-honeydew-100 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-almond-cream-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full bg-honeydew-400`}
+                        className={`h-full rounded-full bg-almond-cream-400`}
                         style={{ width: `${g.weight * 100}%` }}
                       />
                     </div>
@@ -155,22 +155,22 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
           )}
         </div>
         {(profile?.late_policy || profile?.attendance_policy || profile?.drop_rules) && (
-          <div className="pt-4 border-t border-honeydew-50 space-y-2">
+          <div className="pt-4 border-t border-almond-cream-50 space-y-2">
             {profile?.late_policy && (
-              <p className="text-xs text-honeydew-500">
-                <span className="font-semibold text-honeydew-700">Late policy:</span>{" "}
+              <p className="text-xs text-burnt-peach-500">
+                <span className="font-semibold text-espresso-900">Late policy:</span>{" "}
                 {profile.late_policy}
               </p>
             )}
             {profile?.attendance_policy && (
-              <p className="text-xs text-honeydew-500">
-                <span className="font-semibold text-honeydew-700">Attendance:</span>{" "}
+              <p className="text-xs text-burnt-peach-500">
+                <span className="font-semibold text-espresso-900">Attendance:</span>{" "}
                 {profile.attendance_policy}
               </p>
             )}
             {profile?.drop_rules && (
-              <p className="text-xs text-honeydew-500">
-                <span className="font-semibold text-honeydew-700">Drop / withdrawal:</span>{" "}
+              <p className="text-xs text-burnt-peach-500">
+                <span className="font-semibold text-espresso-900">Drop / withdrawal:</span>{" "}
                 {profile.drop_rules}
               </p>
             )}
@@ -185,7 +185,7 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
             {profile.required_tools.map((t) => (
               <span
                 key={t}
-                className="badge bg-neon-ice-50 text-neon-ice-800 border border-neon-ice-200"
+                className="badge bg-burnt-peach-50 text-burnt-peach-800 border border-burnt-peach-200"
               >
                 {t}
               </span>
@@ -201,7 +201,7 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
           <div className="flex flex-wrap gap-3 mb-3">
             {signal.workload && (
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-honeydew-500">Workload</span>
+                <span className="text-xs text-burnt-peach-500">Workload</span>
                 <span className={WORKLOAD_BADGE[signal.workload] ?? "badge"}>
                   {signal.workload.charAt(0).toUpperCase() + signal.workload.slice(1)}
                 </span>
@@ -209,7 +209,7 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
             )}
             {signal.grading_style && (
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-honeydew-500">Grading</span>
+                <span className="text-xs text-burnt-peach-500">Grading</span>
                 <span className="badge-yellow">
                   {signal.grading_style.charAt(0).toUpperCase() + signal.grading_style.slice(1)}
                 </span>
@@ -220,17 +220,17 @@ export default function CourseProfilePage({ params }: { params: Promise<{ id: st
             {signal.key_warnings.map((w) => (
               <div
                 key={w}
-                className="flex items-start gap-2 text-xs text-coral-700 bg-coral-50 rounded-lg px-3 py-2"
+                className="flex items-start gap-2 text-xs text-espresso-800 bg-espresso-50 rounded-lg px-3 py-2"
               >
-                <span className="text-coral-500 mt-0.5">!</span> {w}
+                <span className="text-espresso-800 mt-0.5">!</span> {w}
               </div>
             ))}
             {signal.positive_signals.map((p) => (
               <div
                 key={p}
-                className="flex items-start gap-2 text-xs text-honeydew-700 bg-honeydew-50 rounded-lg px-3 py-2"
+                className="flex items-start gap-2 text-xs text-espresso-900 bg-almond-cream-50 rounded-lg px-3 py-2"
               >
-                <span className="text-honeydew-500 mt-0.5">+</span> {p}
+                <span className="text-burnt-peach-500 mt-0.5">+</span> {p}
               </div>
             ))}
           </div>

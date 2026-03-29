@@ -12,13 +12,13 @@ interface AgentPipelineProps {
 function statusIcon(status: AgentStep["status"]) {
   switch (status) {
     case "done":
-      return <span className="text-honeydew-500">✓</span>;
+      return <span className="text-burnt-peach-500">✓</span>;
     case "running":
       return <span className="agent-dot" />;
     case "error":
-      return <span className="text-coral-500">✗</span>;
+      return <span className="text-espresso-800">✗</span>;
     default:
-      return <span className="text-honeydew-300">○</span>;
+      return <span className="text-almond-cream-300">○</span>;
   }
 }
 
@@ -35,12 +35,12 @@ export function AgentPipeline({ steps }: AgentPipelineProps) {
             <span
               className={
                 step.status === "done"
-                  ? "text-honeydew-700"
+                  ? "text-espresso-900"
                   : step.status === "running"
-                    ? "text-honeydew-900 font-medium"
+                    ? "text-shadow-grey-900 font-medium"
                     : step.status === "error"
-                      ? "text-coral-700"
-                      : "text-honeydew-400"
+                      ? "text-espresso-800"
+                      : "text-almond-cream-400"
               }
             >
               {step.label}

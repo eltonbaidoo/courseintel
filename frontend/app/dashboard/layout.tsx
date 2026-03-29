@@ -5,7 +5,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAppStore } from "@/stores/app-store";
+import { CourseIntelLogo } from "@/components/brand/CourseIntelLogo";
 import LLMProviderBadge from "@/components/LLMProviderBadge";
+import DemoWelcomeBanner from "@/components/dashboard/DemoWelcomeBanner";
 
 const NAV = [{ href: "/dashboard", label: "My Courses", icon: "⬡" }];
 
@@ -34,22 +36,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const sidebar = (
-    <aside className="w-60 shrink-0 bg-honeydew-950 flex flex-col border-r border-honeydew-900 h-full">
+    <aside className="w-60 shrink-0 bg-shadow-grey-950 flex flex-col border-r border-shadow-grey-900 h-full">
       {/* Logo */}
-      <div className="px-5 pt-6 pb-5 border-b border-honeydew-900">
+      <div className="px-5 pt-6 pb-5 border-b border-shadow-grey-900">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2.5 group"
+          className="group flex items-center gap-2.5"
           onClick={() => setSidebarOpen(false)}
         >
-          <div className="w-8 h-8 rounded-lg bg-honeydew-500 flex items-center justify-center shadow-glow-green group-hover:bg-honeydew-400 transition-colors">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 2L14 5V11L8 14L2 11V5L8 2Z" stroke="white" strokeWidth="1.5" fill="none" />
-              <circle cx="8" cy="8" r="2" fill="white" />
-            </svg>
-          </div>
-          <span className="font-display font-bold text-honeydew-50 text-base tracking-tight">
-            CourseIntel
+          <span className="rounded-md bg-almond-cream-50 px-1.5 py-1 transition-opacity group-hover:opacity-90">
+            <CourseIntelLogo className="h-6 w-auto" />
           </span>
         </Link>
       </div>
@@ -64,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href={href}
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150
-                ${active ? "bg-honeydew-800 text-honeydew-100" : "text-honeydew-400 hover:bg-honeydew-900 hover:text-honeydew-200"}`}
+                ${active ? "bg-espresso-950 text-almond-cream-100" : "text-almond-cream-400 hover:bg-shadow-grey-900 hover:text-almond-cream-200"}`}
             >
               <span className="text-base leading-none">{icon}</span>
               {label}
@@ -75,7 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Course sub-nav */}
         {courseId && courseId !== "new" && (
           <div className="mt-4">
-            <p className="section-label text-honeydew-700 px-3 mb-2">Current Course</p>
+            <p className="section-label text-espresso-900 px-3 mb-2">Current Course</p>
             <div className="space-y-0.5">
               {COURSE_NAV.map(({ href, label, icon }) => {
                 const fullPath = `/dashboard/course/${courseId}${href ? `/${href}` : ""}`;
@@ -86,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href={fullPath}
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150
-                      ${active ? "bg-honeydew-500 text-white shadow-glow-green" : "text-honeydew-500 hover:bg-honeydew-900 hover:text-honeydew-200"}`}
+                      ${active ? "bg-burnt-peach-500 text-almond-cream-50" : "text-burnt-peach-500 hover:bg-shadow-grey-900 hover:text-almond-cream-200"}`}
                   >
                     <span className="text-base leading-none">{icon}</span>
                     {label}
@@ -99,39 +95,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-4 border-t border-honeydew-900 space-y-2">
+      <div className="px-4 py-4 border-t border-shadow-grey-900 space-y-2">
         {user && (
           <div className="flex items-center justify-between">
-            <p className="text-xs text-honeydew-400 truncate max-w-[140px]">{user.email}</p>
+            <p className="text-xs text-almond-cream-400 truncate max-w-[140px]">{user.email}</p>
             <button
               onClick={handleSignOut}
-              className="text-xs text-honeydew-600 hover:text-honeydew-300 transition-colors"
+              className="text-xs text-espresso-800 hover:text-almond-cream-300 transition-colors"
             >
               Sign out
             </button>
           </div>
         )}
         <LLMProviderBadge />
-        <p className="text-xs text-honeydew-700">CourseIntel MVP v0.1</p>
+        <p className="text-xs text-espresso-900">CourseIntel MVP v0.1</p>
       </div>
     </aside>
   );
 
   return (
-    <div className="flex h-screen bg-honeydew-50 overflow-hidden">
+    <div className="flex h-screen bg-almond-cream-50 overflow-hidden">
       {/* Mobile top bar */}
-      <div className="fixed top-0 left-0 right-0 z-30 flex items-center h-14 px-4 bg-honeydew-950 border-b border-honeydew-900 md:hidden">
+      <div className="fixed top-0 left-0 right-0 z-30 flex items-center h-14 px-4 bg-shadow-grey-950 border-b border-shadow-grey-900 md:hidden">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="text-honeydew-300 hover:text-white p-1"
+          className="text-almond-cream-300 hover:text-almond-cream-50 p-1"
           aria-label="Open sidebar"
         >
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span className="ml-3 font-display font-bold text-honeydew-50 text-sm">
-          CourseIntel
+        <span className="ml-3 rounded bg-almond-cream-50 px-1.5 py-0.5">
+          <CourseIntelLogo className="h-5 w-auto" />
         </span>
       </div>
 
@@ -139,7 +135,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-shadow-grey-950/50"
             onClick={() => setSidebarOpen(false)}
           />
           <div className="relative h-full w-60 animate-slide-in">{sidebar}</div>
@@ -151,7 +147,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+          <DemoWelcomeBanner />
           {children}
         </div>
       </main>

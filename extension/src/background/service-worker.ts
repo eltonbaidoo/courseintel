@@ -1,7 +1,7 @@
 /**
  * Background service worker.
  * Receives scrape trigger from popup, runs content script, POSTs to CourseIntel backend.
- * LLM fallback (Anthropic → Gemini) is handled server-side — transparent here.
+ * LLM calls are handled server-side (OpenAI) — transparent here.
  *
  * API_URL is injected at build time via __API_URL__ replacement.
  * Default falls back to localhost for development.

@@ -16,19 +16,19 @@ export function CategoryBreakdown({ categories }: CategoryBreakdownProps) {
       {categories.map((cat) => (
         <div key={cat.name}>
           <div className="flex justify-between text-sm mb-1">
-            <span className="font-medium text-honeydew-800">{cat.name}</span>
-            <span className="font-mono text-honeydew-600">
+            <span className="font-medium text-espresso-950">{cat.name}</span>
+            <span className="font-mono text-espresso-800">
               {(cat.weight * 100).toFixed(0)}%
               {cat.percent != null && (
-                <span className="ml-2 text-honeydew-800 font-semibold">
+                <span className="ml-2 text-espresso-950 font-semibold">
                   ({cat.percent.toFixed(1)}%)
                 </span>
               )}
             </span>
           </div>
-          <div className="h-2 rounded-full bg-honeydew-100 overflow-hidden">
+          <div className="h-2 rounded-full bg-almond-cream-100 overflow-hidden">
             <div
-              className="h-2 rounded-full bg-honeydew-400 transition-all duration-500"
+              className="h-2 rounded-full bg-almond-cream-400 transition-all duration-500"
               style={{ width: `${cat.weight * 100}%` }}
             />
           </div>

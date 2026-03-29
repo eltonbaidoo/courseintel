@@ -1,12 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
 
-type Status = { active_provider: "anthropic" | "openai" | "none"; anthropic: boolean; openai: boolean } | null;
+type Status = { active_provider: "openai" | "none"; openai: boolean } | null;
 
 const CONFIG: Record<string, { label: string; cls: string }> = {
-  anthropic: { label: "Claude",  cls: "bg-honeydew-900 text-honeydew-400 border border-honeydew-800" },
-  openai:    { label: "GPT-4o",  cls: "bg-honeydew-900 text-neon-ice-400 border border-honeydew-800" },
-  none:      { label: "No LLM",  cls: "bg-coral-900 text-coral-400 border border-coral-800" },
+  openai: {
+    label: "OpenAI",
+    cls: "bg-shadow-grey-900 text-burnt-peach-400 border border-espresso-950",
+  },
+  none: {
+    label: "No LLM",
+    cls: "bg-espresso-950 text-burnt-peach-600 border border-espresso-900",
+  },
 };
 
 export default function LLMProviderBadge() {
@@ -14,12 +19,17 @@ export default function LLMProviderBadge() {
 
   useEffect(() => {
     const url = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+    const token = process.env.NEXT_PUBLIC_HEALTH_TOKEN ?? "";
+    if (!token) {
+      setStatus(null);
+      return;
+    }
     fetch(`${url}/health/llm`, {
-      headers: { "X-Internal-Token": process.env.NEXT_PUBLIC_HEALTH_TOKEN ?? "" },
+      headers: { "X-Internal-Token": token },
     })
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("llm health"))))
       .then(setStatus)
-      .catch(() => null);
+      .catch(() => setStatus(null));
   }, []);
 
   if (!status) return null;
@@ -27,8 +37,11 @@ export default function LLMProviderBadge() {
   const cfg = CONFIG[status.active_provider] ?? CONFIG.none;
 
   return (
-    <span className={`badge text-xs ${cfg.cls}`} title={`Active LLM: ${status.active_provider}`}>
-      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+    <span
+      className={`badge text-xs ${cfg.cls}`}
+      title={`LLM: ${status.active_provider}${status.openai ? " (reachable)" : ""}`}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
       {cfg.label}
     </span>
   );

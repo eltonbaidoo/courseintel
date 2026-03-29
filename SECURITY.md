@@ -33,7 +33,7 @@ You will receive an acknowledgement within 48 hours. We aim to ship a patch with
 All secrets can be rotated without downtime:
 | Secret | How to rotate |
 |---|---|
-| `ANTHROPIC_API_KEY` | Generate new key in Anthropic console → update secrets manager → redeploy |
+| `OPENAI_API_KEY` | Rotate in OpenAI dashboard → update secrets manager → redeploy |
 | `GOOGLE_API_KEY` | Regenerate in Google AI Studio → update |
 | `TAVILY_API_KEY` | Regenerate in Tavily dashboard → update |
 | `SUPABASE_JWT_SECRET` | Rotate via Supabase dashboard (invalidates all existing sessions) |

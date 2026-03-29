@@ -19,10 +19,10 @@ const INITIAL_STEPS: AgentStep[] = [
 ];
 
 const statusIcon = (s: StepStatus) => {
-  if (s === "done") return <span className="text-honeydew-500">✓</span>;
+  if (s === "done") return <span className="text-burnt-peach-500">✓</span>;
   if (s === "running") return <span className="agent-dot inline-block" />;
-  if (s === "error") return <span className="text-coral-500">✗</span>;
-  return <span className="w-2 h-2 rounded-full bg-honeydew-200 inline-block" />;
+  if (s === "error") return <span className="text-espresso-800">✗</span>;
+  return <span className="w-2 h-2 rounded-full bg-almond-cream-200 inline-block" />;
 };
 
 export default function CourseSetupPage() {
@@ -89,10 +89,10 @@ export default function CourseSetupPage() {
     <div className="max-w-2xl stagger">
       <div className="mb-8">
         <p className="section-label mb-2">New Course</p>
-        <h1 className="font-display text-3xl font-bold text-honeydew-950">
+        <h1 className="font-display text-3xl font-bold text-shadow-grey-950">
           Bootstrap a Course
         </h1>
-        <p className="text-honeydew-600 text-sm mt-1">
+        <p className="text-espresso-800 text-sm mt-1">
           Enter your course details. CourseIntel runs 7 agents in sequence to
           build your intelligence model.
         </p>
@@ -102,7 +102,7 @@ export default function CourseSetupPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="card p-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-honeydew-600 mb-1.5">
+            <label className="block text-xs font-semibold text-espresso-800 mb-1.5">
               University *
             </label>
             <input
@@ -114,7 +114,7 @@ export default function CourseSetupPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-honeydew-600 mb-1.5">
+            <label className="block text-xs font-semibold text-espresso-800 mb-1.5">
               Course Name or Code *
             </label>
             <input
@@ -126,7 +126,7 @@ export default function CourseSetupPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-honeydew-600 mb-1.5">
+            <label className="block text-xs font-semibold text-espresso-800 mb-1.5">
               Professor
             </label>
             <input
@@ -137,7 +137,7 @@ export default function CourseSetupPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-honeydew-600 mb-1.5">
+            <label className="block text-xs font-semibold text-espresso-800 mb-1.5">
               Upload Syllabus
             </label>
             <input
@@ -145,9 +145,9 @@ export default function CourseSetupPage() {
               type="file"
               accept=".pdf"
               disabled={running}
-              className="text-sm text-honeydew-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-honeydew-100 file:text-honeydew-700 hover:file:bg-honeydew-200 transition-all"
+              className="text-sm text-espresso-800 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-almond-cream-100 file:text-espresso-900 hover:file:bg-almond-cream-200 transition-all"
             />
-            <p className="text-xs text-honeydew-400 mt-1">
+            <p className="text-xs text-almond-cream-400 mt-1">
               PDF only · max 10 MB · optional, we&apos;ll try to find it
             </p>
           </div>
@@ -169,7 +169,7 @@ export default function CourseSetupPage() {
               <div
                 key={i}
                 className={`flex items-center gap-3 text-sm transition-all duration-300
-                  ${step.status === "running" ? "text-honeydew-900 font-semibold" : step.status === "done" ? "text-honeydew-500" : step.status === "error" ? "text-coral-600" : "text-honeydew-300"}`}
+                  ${step.status === "running" ? "text-shadow-grey-900 font-semibold" : step.status === "done" ? "text-burnt-peach-500" : step.status === "error" ? "text-espresso-700" : "text-almond-cream-300"}`}
               >
                 <span className="w-5 flex justify-center shrink-0">
                   {statusIcon(step.status)}
@@ -180,7 +180,7 @@ export default function CourseSetupPage() {
                     {[0, 1, 2].map((d) => (
                       <span
                         key={d}
-                        className="w-1 h-1 rounded-full bg-neon-ice-400 animate-agent-run"
+                        className="w-1 h-1 rounded-full bg-burnt-peach-400 animate-agent-run"
                         style={{ animationDelay: `${d * 200}ms` }}
                       />
                     ))}
@@ -191,7 +191,7 @@ export default function CourseSetupPage() {
           </div>
 
           {currentStep === -1 && !running && (
-            <p className="text-xs text-honeydew-400 mt-4 text-center">
+            <p className="text-xs text-almond-cream-400 mt-4 text-center">
               Fill the form and click Bootstrap to start
             </p>
           )}

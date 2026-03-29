@@ -8,12 +8,12 @@ export default function RootError({
   reset: () => void;
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-honeydew-50 px-4">
-      <div className="card border-coral-200 bg-coral-50 p-8 text-center max-w-sm">
-        <h2 className="font-display text-lg font-semibold text-coral-800">
+    <div className="min-h-screen flex items-center justify-center bg-almond-cream-50 px-4">
+      <div className="card border-espresso-200 bg-espresso-50 p-8 text-center max-w-sm">
+        <h2 className="font-display text-lg font-semibold text-espresso-900">
           Something went wrong
         </h2>
-        <p className="mt-2 text-sm text-coral-600">{error.message}</p>
+        <p className="mt-2 text-sm text-espresso-700">{error.message}</p>
         <button onClick={reset} className="btn-secondary mt-4">
           Try again
         </button>

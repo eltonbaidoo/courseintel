@@ -25,10 +25,10 @@ export function useToast() {
 }
 
 const VARIANT_CLASSES: Record<ToastVariant, string> = {
-  success: "border-honeydew-300 bg-honeydew-50",
-  error: "border-coral-300 bg-coral-50",
-  warning: "border-banana-300 bg-banana-50",
-  info: "border-neon-ice-300 bg-neon-ice-50",
+  success: "border-almond-cream-300 bg-almond-cream-50",
+  error: "border-burnt-peach-500 bg-espresso-50",
+  warning: "border-almond-cream-300 bg-almond-cream-50",
+  info: "border-burnt-peach-300 bg-burnt-peach-50",
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -57,15 +57,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             }}
             className={`rounded-xl border px-4 py-3 shadow-card animate-slide-in ${VARIANT_CLASSES[t.variant]}`}
           >
-            <Toast.Title className="text-sm font-semibold text-honeydew-900">
+            <Toast.Title className="text-sm font-semibold text-shadow-grey-900">
               {t.title}
             </Toast.Title>
             {t.description && (
-              <Toast.Description className="mt-0.5 text-xs text-honeydew-600">
+              <Toast.Description className="mt-0.5 text-xs text-espresso-800">
                 {t.description}
               </Toast.Description>
             )}
-            <Toast.Close className="absolute right-2 top-2 text-honeydew-400 hover:text-honeydew-700 text-xs">
+            <Toast.Close className="absolute right-2 top-2 text-almond-cream-400 hover:text-espresso-900 text-xs">
               ✕
             </Toast.Close>
           </Toast.Root>

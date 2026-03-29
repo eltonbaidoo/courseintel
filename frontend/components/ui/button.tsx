@@ -5,22 +5,25 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-almond-cream-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burnt-peach-400/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         default:
-          "bg-honeydew-500 text-white shadow-glow-green hover:bg-honeydew-400 hover:shadow-[0_0_40px_-4px_rgb(124_175_80_/_0.5)]",
+          "bg-burnt-peach-500 text-almond-cream-50 hover:bg-burnt-peach-600",
         destructive:
-          "bg-coral-500 text-white shadow-glow-coral hover:bg-coral-400",
+          "bg-espresso-900 text-almond-cream-50 hover:bg-shadow-grey-900",
         outline:
-          "border border-white/10 glass bg-white/5 hover:bg-white/10 text-honeydew-100",
+          "border border-espresso-200 bg-almond-cream-50/80 text-espresso-900 hover:bg-almond-cream-100",
         secondary:
-          "bg-white/10 text-honeydew-100 backdrop-blur-md hover:bg-white/20",
-        ghost: "hover:bg-white/10 text-honeydew-100",
-        link: "text-honeydew-400 underline-offset-4 hover:underline",
-        base44: "bg-blue-500 hover:bg-blue-600 text-white shadow shadow-blue-500/20",
-        "base44-ghost": "hover:text-white text-slate-300 transition-colors",
+          "bg-almond-cream-200 text-espresso-900 hover:bg-almond-cream-300",
+        ghost:
+          "text-espresso-800 hover:bg-almond-cream-100",
+        link: "text-burnt-peach-600 underline-offset-4 hover:text-burnt-peach-700 hover:underline",
+        base44:
+          "bg-burnt-peach-500 text-almond-cream-50 hover:bg-burnt-peach-600",
+        "base44-ghost":
+          "text-almond-cream-400 transition-colors hover:text-almond-cream-50",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -7,6 +7,26 @@ import type {
 } from "@/types/grades";
 import type { ScrapePayload, ScrapeValidationResponse } from "@/types/extension";
 
+export interface ActionPlanResponse {
+  risk_level: "low" | "medium" | "high" | "critical" | "unknown";
+  risk_explanation?: string;
+  weekly_actions: {
+    title: string;
+    rationale: string;
+    priority: number;
+    due_date?: string | null;
+  }[];
+  missing_data_flags: string[];
+  focus_note: string;
+}
+
+export interface StudyAnalysisResponse {
+  summary: string;
+  key_topics: string[];
+  weak_coverage: string[];
+  study_priorities: string[];
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export class ApiError extends Error {
@@ -61,7 +81,7 @@ export const api = {
   },
 
   getActionPlan: (courseId: string) =>
-    request<{ message: string }>(`/courses/${courseId}/action-plan`),
+    request<ActionPlanResponse>(`/courses/${courseId}/action-plan`),
 
   /* ── Grades ── */
   computeGrades: (entries: GradeEntryPayload[], categories: Record<string, number>) =>
@@ -83,6 +103,37 @@ export const api = {
         body: JSON.stringify({ course_id: courseId, target_letter: targetLetter }),
       },
     ),
+
+  addGradeEntry: (courseId: string, entry: Omit<GradeEntryPayload, "course_id">) =>
+    request<{ id: string }>(`/grades/courses/${courseId}/entries`, {
+      method: "POST",
+      body: JSON.stringify(entry),
+    }),
+
+  deleteGradeEntry: (entryId: string) =>
+    request<{ deleted: boolean }>(`/grades/entries/${entryId}`, {
+      method: "DELETE",
+    }),
+
+  /* ── Study ── */
+  uploadStudyMaterial: async (courseId: string, formData: FormData) => {
+    const auth = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/study/courses/${courseId}/upload`, {
+      method: "POST",
+      headers: auth,
+      body: formData,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new ApiError(res.status, text);
+    }
+    return res.json() as Promise<{ id: string; title: string; content_length: number }>;
+  },
+
+  analyzeStudyContext: (courseId: string) =>
+    request<StudyAnalysisResponse>(`/study/courses/${courseId}/analyze`, {
+      method: "POST",
+    }),
 
   /* ── Extension ── */
   submitScrape: (payload: ScrapePayload) =>

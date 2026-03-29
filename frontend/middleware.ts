@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseMiddlewareClient } from "@/lib/supabase-server";
 
-const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/verify"]);
+const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/verify", "/demo"]);
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -13,7 +13,15 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getSession();
 
   const isPublic = PUBLIC_PATHS.has(pathname);
-  const isAuthPage = pathname === "/login" || pathname === "/signup" || pathname === "/verify";
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/verify";
+
+  // Logged-in users skip the demo wizard
+  if (session && pathname === "/demo") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
   // Authenticated user on auth pages → redirect to dashboard
   if (session && isAuthPage) {

@@ -42,10 +42,10 @@ function CourseCard({ course }: { course: Course }) {
       <div className="flex items-start justify-between">
         <div>
           <p className="section-label mb-1">{course.university}</p>
-          <h2 className="font-display font-bold text-honeydew-900 text-lg leading-tight">
+          <h2 className="font-display font-bold text-shadow-grey-900 text-lg leading-tight">
             {course.courseCode}
           </h2>
-          <p className="text-honeydew-600 text-sm">{course.courseName}</p>
+          <p className="text-espresso-800 text-sm">{course.courseName}</p>
         </div>
         {grade != null && <RiskBadge risk={risk} />}
       </div>
@@ -54,15 +54,15 @@ function CourseCard({ course }: { course: Course }) {
       {grade != null ? (
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <span className="text-xs text-honeydew-500">Current Grade</span>
-            <span className="font-mono font-semibold text-honeydew-800">
+            <span className="text-xs text-burnt-peach-500">Current Grade</span>
+            <span className="font-mono font-semibold text-espresso-950">
               {grade.toFixed(1)}%
             </span>
           </div>
           <GradeBar percent={grade} size="sm" />
         </div>
       ) : (
-        <p className="text-xs text-honeydew-400">No grades entered yet</p>
+        <p className="text-xs text-almond-cream-400">No grades entered yet</p>
       )}
 
       {/* Tools */}
@@ -70,13 +70,13 @@ function CourseCard({ course }: { course: Course }) {
         {tools.slice(0, 3).map((t) => (
           <span
             key={t.tool_name}
-            className="badge bg-neon-ice-50 text-neon-ice-700 border border-neon-ice-200"
+            className="badge bg-burnt-peach-50 text-burnt-peach-700 border border-burnt-peach-200"
           >
             {t.tool_name}
           </span>
         ))}
         {course.professor && (
-          <span className="text-xs text-honeydew-400 ml-auto">
+          <span className="text-xs text-almond-cream-400 ml-auto">
             by {course.professor}
           </span>
         )}
@@ -93,7 +93,7 @@ export default function Dashboard() {
     return (
       <div className="stagger">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="font-display text-3xl font-bold text-honeydew-950">
+          <h1 className="font-display text-3xl font-bold text-shadow-grey-950">
             My Courses
           </h1>
         </div>
@@ -114,10 +114,10 @@ export default function Dashboard() {
     <div className="stagger space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-bold text-honeydew-950">
+          <h1 className="font-display text-3xl font-bold text-shadow-grey-950">
             My Courses
           </h1>
-          <p className="text-honeydew-600 text-sm mt-1">
+          <p className="text-espresso-800 text-sm mt-1">
             {courses.length} course{courses.length !== 1 ? "s" : ""} tracked
           </p>
         </div>
@@ -138,15 +138,15 @@ export default function Dashboard() {
 
             <Link
               href="/dashboard/course/new/setup"
-              className="card border-dashed border-honeydew-200 p-5 flex flex-col items-center justify-center gap-2 text-center hover:border-honeydew-400 hover:bg-honeydew-50 transition-all duration-200 min-h-40"
+              className="card border-dashed border-almond-cream-200 p-5 flex flex-col items-center justify-center gap-2 text-center hover:border-almond-cream-400 hover:bg-almond-cream-50 transition-all duration-200 min-h-40"
             >
-              <div className="w-10 h-10 rounded-xl bg-honeydew-100 flex items-center justify-center text-honeydew-500 text-xl">
+              <div className="w-10 h-10 rounded-xl bg-almond-cream-100 flex items-center justify-center text-burnt-peach-500 text-xl">
                 +
               </div>
-              <p className="font-semibold text-honeydew-600 text-sm">
+              <p className="font-semibold text-espresso-800 text-sm">
                 Add another course
               </p>
-              <p className="text-xs text-honeydew-400">
+              <p className="text-xs text-almond-cream-400">
                 CourseIntel will find the syllabus automatically
               </p>
             </Link>

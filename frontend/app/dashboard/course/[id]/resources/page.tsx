@@ -29,18 +29,18 @@ export default function ResourcesPage({ params }: { params: Promise<{ id: string
     <div className="space-y-6 stagger">
       <div>
         <p className="section-label mb-1">Discovery</p>
-        <h1 className="font-display text-3xl font-bold text-honeydew-950">
+        <h1 className="font-display text-3xl font-bold text-shadow-grey-950">
           Resources & Tools
         </h1>
-        <p className="text-honeydew-500 text-sm mt-1 max-w-2xl">
+        <p className="text-burnt-peach-500 text-sm mt-1 max-w-2xl">
           Agents match your syllabus to LMS platforms and public materials. Use{" "}
-          <strong className="text-honeydew-700 font-medium">Connect</strong> for
+          <strong className="text-espresso-900 font-medium">Connect</strong> for
           per-platform tips; pair with the Chrome extension to validate scrapes.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-honeydew-100 bg-honeydew-50/60 p-4 text-sm text-honeydew-700">
-        <p className="font-semibold text-honeydew-900 text-xs section-label mb-2">
+      <div className="rounded-2xl border border-almond-cream-100 bg-almond-cream-50/60 p-4 text-sm text-espresso-900">
+        <p className="font-semibold text-shadow-grey-900 text-xs section-label mb-2">
           Tip
         </p>
         If a tool is missing, re-run bootstrap with a clearer syllabus PDF or add the
@@ -51,7 +51,7 @@ export default function ResourcesPage({ params }: { params: Promise<{ id: string
       <section>
         <p className="section-label mb-3">Detected Platforms</p>
         {tools.length === 0 ? (
-          <p className="text-sm text-honeydew-400">
+          <p className="text-sm text-almond-cream-400">
             No platforms detected. Run course bootstrap to discover tools.
           </p>
         ) : (
@@ -62,8 +62,8 @@ export default function ResourcesPage({ params }: { params: Promise<{ id: string
                 className="card p-4 flex items-start justify-between gap-3"
               >
                 <div>
-                  <p className="font-semibold text-honeydew-900">{tool.tool_name}</p>
-                  <p className="text-sm text-honeydew-500">{tool.purpose}</p>
+                  <p className="font-semibold text-shadow-grey-900">{tool.tool_name}</p>
+                  <p className="text-sm text-burnt-peach-500">{tool.purpose}</p>
                   {tool.confidence > 0 && (
                     <span className="badge-ice text-xs mt-1 inline-block">
                       {(tool.confidence * 100).toFixed(0)}% confidence
@@ -92,22 +92,22 @@ export default function ResourcesPage({ params }: { params: Promise<{ id: string
 
       {/* Help Bar */}
       {helpPlatform && (
-        <div className="card border-neon-ice-200 bg-neon-ice-50 p-5 space-y-2 animate-fade-up">
+        <div className="card border-burnt-peach-200 bg-burnt-peach-50 p-5 space-y-2 animate-fade-up">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-neon-ice-900 font-display">
+            <h3 className="font-semibold text-burnt-peach-900 font-display">
               How to connect {helpPlatform}
             </h3>
             <button
               onClick={() => setHelpPlatform(null)}
-              className="text-neon-ice-400 hover:text-neon-ice-600 text-xs"
+              className="text-burnt-peach-400 hover:text-burnt-peach-600 text-xs"
             >
               Dismiss
             </button>
           </div>
           {loadingHelp ? (
-            <p className="text-sm text-neon-ice-600">Loading instructions...</p>
+            <p className="text-sm text-burnt-peach-600">Loading instructions...</p>
           ) : helpCard ? (
-            <div className="space-y-2 text-sm text-neon-ice-900">
+            <div className="space-y-2 text-sm text-burnt-peach-900">
               {helpCard.what_it_is && (
                 <p>
                   <strong>What it is:</strong> {helpCard.what_it_is}
@@ -124,13 +124,13 @@ export default function ResourcesPage({ params }: { params: Promise<{ id: string
                 </p>
               )}
               {helpCard.troubleshoot_tip && (
-                <p className="text-neon-ice-700 text-xs">
+                <p className="text-burnt-peach-700 text-xs">
                   Tip: {helpCard.troubleshoot_tip}
                 </p>
               )}
             </div>
           ) : (
-            <p className="text-sm text-neon-ice-600">
+            <p className="text-sm text-burnt-peach-600">
               No help available for this platform yet.
             </p>
           )}
@@ -141,7 +141,7 @@ export default function ResourcesPage({ params }: { params: Promise<{ id: string
       <section>
         <p className="section-label mb-3">Public Resources</p>
         {resources.length === 0 ? (
-          <p className="text-sm text-honeydew-400">
+          <p className="text-sm text-almond-cream-400">
             No public resources discovered yet.
           </p>
         ) : (
@@ -155,12 +155,12 @@ export default function ResourcesPage({ params }: { params: Promise<{ id: string
                 className="card-hover p-4 flex items-start justify-between gap-3"
               >
                 <div>
-                  <p className="font-medium text-honeydew-900 text-sm">
+                  <p className="font-medium text-shadow-grey-900 text-sm">
                     {r.title}
                   </p>
-                  <p className="text-xs text-honeydew-500 mt-0.5">{r.reason}</p>
+                  <p className="text-xs text-burnt-peach-500 mt-0.5">{r.reason}</p>
                 </div>
-                <span className="badge bg-honeydew-100 text-honeydew-600 shrink-0">
+                <span className="badge bg-almond-cream-100 text-espresso-800 shrink-0">
                   {r.type.replace("_", " ")}
                 </span>
               </a>

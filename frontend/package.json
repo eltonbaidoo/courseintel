@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=3072 NEXT_TELEMETRY_DISABLED=1 next dev --webpack --disable-source-maps",
+    "dev:turbo": "cross-env NODE_OPTIONS=--max-old-space-size=3072 NEXT_TELEMETRY_DISABLED=1 next dev --turbopack",
+    "dev:prod": "npm run build && cross-env NODE_OPTIONS=--max-old-space-size=2048 NEXT_TELEMETRY_DISABLED=1 next start",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -35,6 +37,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
+    "cross-env": "^10.1.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.29",
     "postcss": "^8",

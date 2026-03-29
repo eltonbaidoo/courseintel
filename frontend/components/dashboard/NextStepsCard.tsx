@@ -50,11 +50,11 @@ export function NextStepsCard({
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
           <p className="section-label mb-0.5">Getting started</p>
-          <h2 className="font-display font-bold text-honeydew-950 text-base">
+          <h2 className="font-display font-bold text-shadow-grey-950 text-base">
             Next steps
           </h2>
         </div>
-        <span className="text-xs font-mono text-honeydew-500 tabular-nums">
+        <span className="text-xs font-mono text-burnt-peach-500 tabular-nums">
           {completed}/{steps.length}
         </span>
       </div>
@@ -64,28 +64,28 @@ export function NextStepsCard({
             key={step.title}
             className={`flex gap-3 rounded-xl border p-3 transition-colors ${
               step.done
-                ? "border-honeydew-200 bg-honeydew-50/50"
-                : "border-honeydew-100 bg-white"
+                ? "border-almond-cream-200 bg-almond-cream-50/50"
+                : "border-almond-cream-100 bg-almond-cream-50"
             }`}
           >
             <span
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold font-mono ${
                 step.done
-                  ? "bg-honeydew-500 text-white"
-                  : "bg-honeydew-100 text-honeydew-500"
+                  ? "bg-burnt-peach-500 text-almond-cream-50"
+                  : "bg-almond-cream-100 text-burnt-peach-500"
               }`}
             >
               {step.done ? "✓" : i + 1}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-honeydew-900">{step.title}</p>
-              <p className="text-xs text-honeydew-500 mt-0.5 leading-relaxed">
+              <p className="font-semibold text-sm text-shadow-grey-900">{step.title}</p>
+              <p className="text-xs text-burnt-peach-500 mt-0.5 leading-relaxed">
                 {step.desc}
               </p>
               {!step.done && (
                 <Link
                   href={step.href}
-                  className="inline-block mt-2 text-xs font-semibold text-neon-ice-700 hover:text-neon-ice-900"
+                  className="inline-block mt-2 text-xs font-semibold text-burnt-peach-700 hover:text-burnt-peach-900"
                 >
                   {step.cta} →
                 </Link>
