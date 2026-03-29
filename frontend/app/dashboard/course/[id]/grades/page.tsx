@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useCourse } from "@/hooks/use-course";
 import { EMPTY_GRADE_ENTRIES, useAppStore } from "@/stores/app-store";
 import { useComputeGrade } from "@/hooks/use-grades";
@@ -52,6 +52,34 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
   const { data: computed } = useComputeGrade(id, categories);
 
   const [showForm, setShowForm] = useState(false);
+
+  // Grade trend — fetched from backend linear regression endpoint
+  const [trend, setTrend] = useState<{
+    trend_label: string;
+    projected_final: number | null;
+    projected_letter: string | null;
+    slope_per_entry: number;
+    confidence: string;
+    data_points: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (entries.length < 2) { setTrend(null); return; }
+    api.getGradeTrend(id)
+      .then(setTrend)
+      .catch(() => setTrend(null));
+  }, [id, entries.length]);
+
+  const trendIcon = trend?.trend_label === "improving" ? "↑"
+    : trend?.trend_label === "declining" ? "↓"
+    : trend?.trend_label === "stable" ? "→"
+    : null;
+  const trendColor = trend?.trend_label === "improving"
+    ? "text-burnt-peach-500"
+    : trend?.trend_label === "declining"
+    ? "text-espresso-700"
+    : "text-almond-cream-500";
+
   const [form, setForm] = useState({
     title: "",
     category: categoryNames[0] ?? "Homework",
@@ -185,6 +213,39 @@ export default function GradesPage({ params }: { params: Promise<{ id: string }>
           title="No grades yet"
           description="Add your first grade to see your standing."
         />
+      )}
+
+      {/* Grade trend card — visible when ≥2 entries and backend trend data is available */}
+      {trend && trend.trend_label !== "insufficient_data" && (
+        <div className="card p-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="section-label mb-0.5">Grade Trend</p>
+            <p className={`font-mono text-lg font-bold ${trendColor}`}>
+              {trendIcon} {trend.trend_label.charAt(0).toUpperCase() + trend.trend_label.slice(1)}
+              {trend.slope_per_entry !== 0 && (
+                <span className="ml-1.5 text-sm font-normal text-almond-cream-400">
+                  ({trend.slope_per_entry > 0 ? "+" : ""}{trend.slope_per_entry.toFixed(2)}% / entry)
+                </span>
+              )}
+            </p>
+          </div>
+          {trend.projected_final !== null && (
+            <div className="text-right">
+              <p className="section-label mb-0.5">Projected Final</p>
+              <p className="font-mono text-lg font-bold text-shadow-grey-900">
+                {trend.projected_final.toFixed(1)}%
+                {trend.projected_letter && (
+                  <span className="ml-1.5 text-sm font-medium text-espresso-700">
+                    ({trend.projected_letter})
+                  </span>
+                )}
+              </p>
+              <p className="text-[10px] text-almond-cream-400 mt-0.5">
+                {trend.confidence} confidence · {trend.data_points} data points
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Add form */}
