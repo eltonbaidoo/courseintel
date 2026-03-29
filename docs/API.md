@@ -48,6 +48,36 @@ Public liveness check. No auth required.
 
 ---
 
+### `GET /health/cache`
+
+LLM response cache metrics. No auth required. Returns operational stats with no sensitive data.
+
+**Response**
+```json
+{
+  "hits": 142,
+  "misses": 18,
+  "total_requests": 160,
+  "hit_rate": 0.8875,
+  "cached_entries": 12,
+  "total_entries": 12,
+  "max_entries": 2000,
+  "ttl_seconds": 3600,
+  "backend": "in-memory",
+  "upgrade_path": "Redis SETEX — see module docstring"
+}
+```
+
+`hit_rate` near 0 is expected on first bootstrap; repeated bootstraps for the same course approach 1.0.
+
+---
+
+### `GET /health/agents`
+
+Live agent ping — makes a real minimal LLM completion call to verify provider connectivity. Gated by `X-Internal-Token` header.
+
+---
+
 ### `GET /health/llm`
 
 Internal-only LLM provider status. Gated by `X-Internal-Token` header.
@@ -148,6 +178,83 @@ Runs the full 8-agent intelligence pipeline for a course. Multipart form upload.
 
 **Note:** If the database write fails, `id` will be `null` but all bootstrap data is still returned
 (local-first pattern). Typical timing: 15–45s (8–20s with PDF upload).
+
+---
+
+### `POST /courses/bootstrap/stream`
+
+Same pipeline as `/bootstrap` but returns a `text/event-stream` response. Each agent stage emits an SSE event as it completes. Use `fetch` + `ReadableStream` (not `EventSource` — POST with FormData is not supported by EventSource).
+
+**Auth:** Required
+**Content-Type:** `multipart/form-data` (same fields as `/bootstrap`)
+
+**Response Content-Type:** `text/event-stream`
+
+Each line in the stream has the format `data: <JSON>\n\n`.
+
+**Event types:**
+
+| `type` / fields | When |
+|----------------|------|
+| `{"type":"heartbeat"}` | Immediately — confirms stream is open |
+| `{"step":N,"stage":"...","status":"running"}` | Agent starts |
+| `{"step":N,"stage":"...","status":"complete","detail":"..."}` | Agent finishes |
+| `{"step":N,"stage":"...","status":"error","detail":"..."}` | Agent failed (pipeline continues) |
+| `{"type":"result","data":{...}}` | Full BootstrapResponse — same schema as `/bootstrap` |
+
+**Stage names:** `syllabus_acquisition`, `syllabus_intelligence`, `course_discovery`, `resource_discovery`, `reputation_analysis`, `tool_detection`, `obligation_normalization`, `persist`
+
+---
+
+### `POST /courses/bootstrap/async`
+
+Non-blocking bootstrap. Returns immediately with a `job_id`. Poll `GET /courses/jobs/{job_id}` for status and result.
+
+**Response (HTTP 202)**
+```json
+{ "job_id": "uuid", "status": "pending", "poll_url": "/courses/jobs/uuid" }
+```
+
+Job lifecycle: `pending → running → completed | failed | timed_out`
+
+---
+
+### `GET /courses/jobs/{job_id}`
+
+Poll a background bootstrap job.
+
+**Auth:** Required
+
+**Response**
+```json
+{
+  "job_id": "uuid",
+  "status": "completed",
+  "created_at": 1700000000.0,
+  "result": { ...BootstrapResponse... }
+}
+```
+
+`result` only present when `status == "completed"`. `error` field present when `status == "failed"`.
+
+---
+
+### `GET /courses/{course_id}/obligations/prioritized`
+
+Returns obligations sorted by urgency: `critical → high → medium → low`.
+
+**Auth:** Required
+
+**Response**
+```json
+{
+  "course_id": "uuid",
+  "count": 4,
+  "obligations": [
+    { "title": "Midterm Exam", "date": "2025-03-15", "urgency": "critical", "type": "exam" }
+  ]
+}
+```
 
 ---
 
@@ -317,6 +424,35 @@ Zero LLM — deterministic math only.
 
 `feasible` is `true` if `required_pct ≤ 100`. When `false`, the target is mathematically
 unreachable with the remaining weight.
+
+---
+
+### `GET /grades/courses/{course_id}/trend`
+
+Linear regression grade trend prediction over all entered grade entries for a course.
+
+**Auth:** Required
+
+**Response**
+```json
+{
+  "slope_per_entry": 0.42,
+  "trend_label": "improving",
+  "projected_final": 88.7,
+  "projected_letter": "B+",
+  "data_points": 6,
+  "confidence": "medium"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `trend_label` | `improving` / `declining` / `stable` / `insufficient_data` |
+| `slope_per_entry` | Percentage points gained/lost per additional grade entry |
+| `projected_final` | Extrapolated final grade at current trajectory (clamped 0–100) |
+| `confidence` | `low` (<4 entries) / `medium` (4–7) / `high` (≥8) |
+
+Returns `422` if the course has no grading categories configured.
 
 ---
 
