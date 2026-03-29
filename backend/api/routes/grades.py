@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from api.deps import get_user_id
+from api.utils import get_course_or_404
 from db import queries
 from models.grades import GradeEntryCreate, GoalRequest
 from agents.grade_intelligence import (
@@ -67,11 +68,7 @@ async def add_grade_entry(
     entry: GradeEntryCreateRequest,
     user_id: str = Depends(get_user_id),
 ):
-    # Verify course ownership
-    course = queries.get_course(course_id, user_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found.")
-
+    get_course_or_404(course_id, user_id)
     saved = queries.create_grade_entry(user_id, course_id, entry.model_dump())
     return saved
 
@@ -81,10 +78,7 @@ async def list_grade_entries(
     course_id: str,
     user_id: str = Depends(get_user_id),
 ):
-    course = queries.get_course(course_id, user_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found.")
-
+    get_course_or_404(course_id, user_id)
     entries = queries.list_grade_entries(course_id, user_id)
     return {"entries": entries}
 
